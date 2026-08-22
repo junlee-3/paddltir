@@ -20,6 +20,9 @@ Working through superpowers:brainstorming → writing a design spec → writing-
 - 2026-08-22: **Club model = invite-code clubs.** Coach signs up → creates club → shareable invite code/link. Paddlers sign in by email magic link, enter code, claim their roster row (auto-linked if coach entered their email). Multi-club ready. (user chose)
 - 2026-08-22: **Supabase = new hosted project (ap-southeast-2) + OrbStack locally** for `supabase start` + pgTAP RLS tests. Hosted = staging/prod. (user chose). Jun to install OrbStack: `brew install --cask orbstack`.
 - 2026-08-22: **Availability = coach-defined sessions** (training / race day); paddlers respond In/Out/Maybe + note. (user chose)
+- 2026-08-22: **Navigation = Schedule · Crews · Squad** (approach A). Concepts renamed: Roster→Squad, Crewlist→Crew, Config→Race, heats are rows, Session new. (user chose)
+- 2026-08-22: **powerRatio dropped** — algorithms use absolute erg metres (objective is scale-invariant); UI derives relative bar. (user approved)
+- 2026-08-22: Hosting: Vercel **Services** (web/ Next.js + solver/ FastAPI) preferred; fallback file-based web/api/optimize.py. Python 3.12.
 - 2026-08-22: Mixed-crew gender rule (IDBF, verified): standard boat 8–12 of each gender /20; small boat 4–6 /10. Some events use 8–10 / 4–5 → configurable per category (min/max women).
 
 ## Domain facts from old prototype (extracted 2026-08-22, see agent brief)
@@ -37,16 +40,17 @@ Working through superpowers:brainstorming → writing a design spec → writing-
 - [x] PROGRESS.md created
 
 ## In progress
-- [ ] Brainstorm UX / screen architecture (superpowers:brainstorming)
+- [x] Brainstorm UX / screen architecture — all 6 sections approved
+- [ ] Spec written (docs/superpowers/specs/2026-08-22-paddltir-design.md) — awaiting Jun's review
 
 ## Next
-- [ ] Write design spec → docs/superpowers/specs/
+- [x] Write design spec → docs/superpowers/specs/2026-08-22-paddltir-design.md
 - [ ] Write implementation plan → docs/superpowers/plans/
 - [ ] Visual direction (frontend-design + ui-ux-pro-max), screen concepts (imagegen-frontend-mobile)
 - [ ] Build
 
 ## Blocked / open questions for Jun
-- powerRatio: roster-relative vs absolute scale (to raise with recommendation)
+- (none right now)
 
 ## Learned the hard way
 (nothing yet)
