@@ -333,6 +333,7 @@ end $$;
 -- supabase/seed.sql  (LOCAL ONLY — never pushed to hosted)
 -- ---------- test helpers ----------
 create schema if not exists tests;
+grant usage on schema tests to anon, authenticated;   -- so tests.logout() is callable after login_as()
 
 create or replace function tests.create_user(p_email text, p_name text default null) returns uuid
 language plpgsql security definer as $$
@@ -377,7 +378,7 @@ end $$;
 ```sql
 -- supabase/tests/002_rpc.sql
 begin;
-select plan(14);
+select plan(15);
 
 select tests.create_user('coach@test.dev', 'Coach');
 select tests.create_user('lily@test.dev', 'Lily');
@@ -398,6 +399,7 @@ select throws_ok($$ select create_club('Second') $$, 'P0001', 'already in a club
 select lives_ok($$ insert into paddlers (club_id, name, email, weight_kg, gender) values (auth_club_id(), 'Lily L', 'lily@test.dev', 60, 'female') $$, 'coach inserts paddler');
 select lives_ok($$ insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'Sam S', 80, 'male') $$, 'coach inserts second paddler');
 select tests.logout();
+create temp table sam_row as select id from paddlers where name = 'Sam S';   -- as postgres: Sam cannot see this row before linking
 
 -- claimable list works before joining
 select is((select count(*) from claimable_paddlers((select invite_code from clubs limit 1))), 2::bigint, 'claimable lists unlinked paddlers');
@@ -410,7 +412,8 @@ select tests.logout();
 
 -- sam joins claiming a name
 select tests.login_as('sam@test.dev');
-select lives_ok($$ select join_club((select invite_code from clubs limit 1), (select id from paddlers where name='Sam S')) $$, 'sam claims his row');
+select lives_ok($$ select join_club((select invite_code from clubs limit 1), (select id from sam_row)) $$, 'sam claims his row');
+select is((select profile_id from paddlers where name='Sam S'), (select id from auth.users where email='sam@test.dev'), 'sam linked to his row');
 select is((select role from profiles where display_name='Sam'), 'paddler', 'joiner is paddler');
 select throws_ok($$ select join_club('NOPE1234') $$, 'P0001', 'invalid invite code', 'bad code rejected');
 select tests.logout();
@@ -590,18 +593,20 @@ insert into heats (race_id, name) select id, 'Heat 1' from races;
 insert into seats (heat_id, bench, side, paddler_id) select h.id, 1, 'left', p.id from heats h, paddlers p;
 select is((select count(*) from seats), 1::bigint, 'coach reads own seats');
 select lives_ok($$ update paddlers set weight_kg = 71 $$, 'coach updates paddler');
-select throws_ok($$ delete from paddlers $$, '42501', null, 'nobody deletes paddlers');
+delete from paddlers;   -- no DELETE policy ⇒ RLS hides every row ⇒ silently affects 0 rows
+select is((select count(*) from paddlers), 1::bigint, 'delete is a no-op: nobody deletes paddlers');
 select lives_ok($$ insert into erg_tests (paddler_id, metres, source, recorded_by) select id, 500, 'coach', auth.uid() from paddlers $$, 'coach records erg');
 select lives_ok($$ update clubs set name = 'Club Uno' $$, 'coach renames club');
 select tests.logout();
+create temp table club_one as select id from clubs where name = 'Club Uno';   -- as postgres, for the cross-club insert below
 
 select tests.login_as('c2@test.dev'); select create_club('Club Two');
 select is((select count(*) from paddlers), 0::bigint, 'other club sees no paddlers');
 select is((select count(*) from seats), 0::bigint, 'other club sees no seats');
 select is((select count(*) from sessions), 0::bigint, 'other club sees no sessions');
 select is((select count(*) from clubs), 1::bigint, 'sees only own club');
-select throws_ok($$ insert into paddlers (club_id, name, weight_kg, gender) select id, 'X', 70, 'male' from clubs where name = 'Club Uno' $$, '42501', null, 'cannot insert into other club');
-select is((select count(*) from optimize_cache), 0::bigint, 'cache invisible');
+select throws_ok($$ insert into paddlers (club_id, name, weight_kg, gender) select id, 'X', 70, 'male' from club_one $$, '42501', null, 'cannot insert into other club');
+select throws_ok($$ select count(*) from optimize_cache $$, '42501', null, 'cache not readable by users');
 select throws_ok($$ insert into optimize_cache (input_hash, result) values ('x', '{}') $$, '42501', null, 'cache not writable by users');
 select tests.logout();
 select * from finish();
@@ -639,7 +644,8 @@ select lives_ok($$ update availability set status = 'maybe' where paddler_id = m
 select throws_ok($$ insert into availability (session_id, paddler_id, status) select s.id, p.id, 'out' from sessions s, paddlers_public p where p.name = 'P Two' $$, '42501', null, 'cannot set others availability');
 select lives_ok($$ insert into erg_tests (paddler_id, metres, source, recorded_by) values (my_paddler_id(), 520, 'self', auth.uid()) $$, 'paddler submits own erg');
 select throws_ok($$ insert into erg_tests (paddler_id, metres, source) values (my_paddler_id(), 520, 'coach') $$, '42501', null, 'paddler cannot claim coach source');
-select throws_ok($$ update paddlers set weight_kg = 50 where id = my_paddler_id() $$, '42501', null, 'paddler cannot edit own weight');
+update paddlers set weight_kg = 50 where id = my_paddler_id();   -- no UPDATE policy for paddlers ⇒ affects 0 rows
+select is((select weight_kg from paddlers where id = my_paddler_id()), 61.5::numeric, 'paddler cannot edit own weight');
 select throws_ok($$ insert into seats (heat_id, bench, side, paddler_id) select h.id, 2, 'left', my_paddler_id() from heats h $$, '42501', null, 'paddler cannot edit lineup');
 select throws_ok($$ update profiles set role = 'coach' where id = auth.uid() $$, '42501', null, 'paddler cannot self-promote');
 select is((select count(*) from availability), 1::bigint, 'paddler sees only own availability rows');
@@ -657,8 +663,8 @@ select tests.login_as('coach@test.dev'); select create_club('Club');
 insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'A', 70, 'male');
 select tests.logout();
 select tests.login_anon();
-select is((select count(*) from clubs), 0::bigint, 'anon sees no clubs');
-select is((select count(*) from paddlers), 0::bigint, 'anon sees no paddlers');
+select throws_ok($$ select count(*) from clubs $$, '42501', null, 'anon has no privilege on clubs');
+select throws_ok($$ select count(*) from paddlers $$, '42501', null, 'anon has no privilege on paddlers');
 select throws_ok($$ select * from paddlers_public $$, '42501', null, 'anon cannot use the public view');
 select throws_ok($$ insert into clubs (name) values ('Hack') $$, '42501', null, 'anon cannot insert clubs');
 select throws_ok($$ select create_club('Hack') $$, '42501', null, 'anon cannot call create_club');

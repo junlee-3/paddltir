@@ -31,6 +31,8 @@ is never benched by the algorithms).
 
 **A good lineup** (in priority order, identical in both algorithms):
 0. seats as many of the crew as capacity allows,
+0b. maximises the total erg power of the seated crew (selection quality — so the
+   optimiser never benches a strong paddler to shave grams of imbalance),
 1. minimal weight imbalance `|ΣL_w − ΣR_w|`,
 2. minimal side-preference mismatches,
 3. minimal seat-section mismatches,
@@ -176,8 +178,9 @@ heats            (id, race_id, name, sort_order, drummer_id NULL, sweep_id NULL,
 seats            (heat_id, bench, side, paddler_id, locked bool)
                   PK(heat_id, bench, side)  UNIQUE(heat_id, paddler_id)
 heat_reserves    (heat_id, paddler_id)  PK(heat_id, paddler_id)
-category_rules   (club_id, category, boat_size, min_women, max_women)
-                  PK(club_id, category, boat_size)  -- seeded with IDBF defaults
+category_rules   (club_id, category, boat_size, min_women, max_women, min_men, max_men)
+                  PK(club_id, category, boat_size)  -- nullable = unbounded; seeded with IDBF defaults
+                  -- (women ⇒ max_men 0; mixed standard 8–12/8–12; mixed small 4–6/4–6)
 optimize_cache   (input_hash PK, result jsonb, created_at)
 ```
 All mutable tables carry `updated_at` (trigger-maintained) for sync. Deleting a
@@ -219,7 +222,7 @@ API: `evaluate(lineup) → Metrics`, `autoFill(...)`, `suggestSwaps(top:)`,
 `replacementPlans(for:)`, `validate(lineup) → [Violation]`.
 
 ### MIP (Python 3.12, highspy)
-Stages 0–6 as in §1; each stage adds `objective ≤ best + ε` before the next;
+Stages 0, 0b, 1–6 as in §1; each stage adds `objective ≤ best + ε` before the next;
 warm-start from previous solution. Variables `x[a,b,s] ∈ {0,1}`, `d_drummer`
 etc. fixed from lineup; slacks for absolute values. Caps: stages 0–4 1 s,
 stage 5 0.5 s, stage 6 0.5 s; `proven[stage]` from HiGHS model status (stage 5

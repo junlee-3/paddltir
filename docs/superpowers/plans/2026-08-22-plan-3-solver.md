@@ -545,7 +545,7 @@ def test_is_deterministic():
 
 def test_small_boat_and_underfull():
     res = solve(req(rule=None, boat=Boat(5)))
-    assert res.metrics.seated == 10 and res.metrics.total_power == 6580
+    assert res.metrics.seated == 10 and res.metrics.total_power == 6490   # top-10 men ergs
     few = [f"m{i:02d}" for i in range(1, 8)]
     res2 = solve(req(rule=None, candidates=few))
     assert res2.metrics.seated == 7 and res2.unseated == []

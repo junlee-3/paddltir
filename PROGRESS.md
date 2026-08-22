@@ -4,9 +4,9 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Phase 0 — Brainstorming / design.** Project directory confirmed as
-`/Users/junlee/Documents/programming/paddltir` (git remote: github.com/junlee-3/paddltir).
-Working through superpowers:brainstorming → writing a design spec → writing-plans.
+**Phase 1 — ready to execute Plans 1–3** (core, supabase, solver). Spec approved 2026-08-22.
+Plans live in `docs/superpowers/plans/` — start from `2026-08-22-roadmap.md`.
+Awaiting Jun's choice: subagent-driven vs inline execution.
 
 ## Hard rules (from the brief)
 - Old project `/Users/junlee/Documents/CGS/IB/IA/LEEJun-CSIA/Product/crewCoach` is **READ-ONLY**. Never write/modify anything there.
@@ -23,6 +23,9 @@ Working through superpowers:brainstorming → writing a design spec → writing-
 - 2026-08-22: **Navigation = Schedule · Crews · Squad** (approach A). Concepts renamed: Roster→Squad, Crewlist→Crew, Config→Race, heats are rows, Session new. (user chose)
 - 2026-08-22: **powerRatio dropped** — algorithms use absolute erg metres (objective is scale-invariant); UI derives relative bar. (user approved)
 - 2026-08-22: Hosting: Vercel **Services** (web/ Next.js + solver/ FastAPI) preferred; fallback file-based web/api/optimize.py. Python 3.12.
+- 2026-08-22: **Selection-quality stage added** (maximise total erg of seated crew) between "max seated" and "weight balance" in BOTH algorithms — otherwise the optimiser may bench the strongest paddler to shave grams of imbalance. Flagged to Jun at plan handoff; proceed unless vetoed.
+- 2026-08-22: `category_rules` carries min/max for both women and men (women-only = max_men 0).
+- 2026-08-22: Plans 4 (coach app) and 5 (PWA) are written AFTER the visual-direction phase (frontend-design + ui-ux-pro-max + imagegen) per the brief's skill order.
 - 2026-08-22: Mixed-crew gender rule (IDBF, verified): standard boat 8–12 of each gender /20; small boat 4–6 /10. Some events use 8–10 / 4–5 → configurable per category (min/max women).
 
 ## Domain facts from old prototype (extracted 2026-08-22, see agent brief)
@@ -41,13 +44,17 @@ Working through superpowers:brainstorming → writing a design spec → writing-
 
 ## In progress
 - [x] Brainstorm UX / screen architecture — all 6 sections approved
-- [ ] Spec written (docs/superpowers/specs/2026-08-22-paddltir-design.md) — awaiting Jun's review
+- [x] Spec written and approved (docs/superpowers/specs/2026-08-22-paddltir-design.md)
+- [x] Roadmap + Plans 1–3 written and self-reviewed (docs/superpowers/plans/)
+- [ ] Execute Plan 1 (PaddltirCore)
+- [ ] Execute Plan 2 (Supabase) — needs OrbStack installed
+- [ ] Execute Plan 3 (Solver)
 
 ## Next
 - [x] Write design spec → docs/superpowers/specs/2026-08-22-paddltir-design.md
-- [ ] Write implementation plan → docs/superpowers/plans/
-- [ ] Visual direction (frontend-design + ui-ux-pro-max), screen concepts (imagegen-frontend-mobile)
-- [ ] Build
+- [ ] Phase 2: visual direction (frontend-design + ui-ux-pro-max) → docs/design/direction.md; concepts via imagegen-frontend-mobile
+- [ ] Write Plans 4 (coach app) + 5 (PWA), then execute
+- [ ] Plan 6 integration + verification
 
 ## Blocked / open questions for Jun
 - (none right now)
