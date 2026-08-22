@@ -34,8 +34,11 @@ import Testing
         #expect(l.paddler(at: s1L) == nil && l.paddler(at: s2L) == b)
         l.setLocked(true, at: s2L)
         #expect(l.isLocked(s2L) && l.lockedSeats == [s2L])
-        l.swap(s2L, s1L)                          // locks travel with the seat, not the paddler
-        #expect(l.isLocked(s2L) && !l.isLocked(s1L))
+        l.place(c, at: s2L)                       // place() preserves an existing lock on the target seat
+        #expect(l.isLocked(s2L) && l.paddler(at: s2L) == c)
+        l.swap(s2L, s1L)                          // a vacated seat cannot hold a lock
+        #expect(l.paddler(at: s1L) == c && l.paddler(at: s2L) == nil)
+        #expect(!l.isLocked(s1L) && l.lockedSeats.isEmpty)
     }
     @Test func canonicalOrderAndEmptySeats() {
         let l = Lineup(boat: .small, assignments: [
