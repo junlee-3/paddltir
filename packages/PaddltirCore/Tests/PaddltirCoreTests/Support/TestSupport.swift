@@ -3,9 +3,9 @@ import Foundation
 
 /// Repo-root /fixtures directory, located relative to this source file.
 func fixturesURL() -> URL {
-    // .../packages/PaddltirCore/Tests/PaddltirCoreTests/Support/TestSupport.swift → repo root is 5 levels up
+    // .../packages/PaddltirCore/Tests/PaddltirCoreTests/Support/TestSupport.swift → repo root is 6 levels up
     var url = URL(fileURLWithPath: #filePath)
-    for _ in 0..<5 { url.deleteLastPathComponent() }
+    for _ in 0..<6 { url.deleteLastPathComponent() }
     return url.appendingPathComponent("fixtures", isDirectory: true)
 }
 
