@@ -254,8 +254,8 @@ struct DesignSystemGallery: View {
             VStack(alignment: .leading, spacing: DS.Space.s) {
                 HStack(spacing: DS.Space.s) {
                     Pill("Stroke")
-                    Pill("Confirmed", tint: DS.good.opacity(0.18))
-                    Pill("Warning", tint: DS.danger.opacity(0.18))
+                    Pill("Confirmed", tint: DS.good.opacity(0.18), foreground: DS.good)
+                    Pill("Warning", tint: DS.danger.opacity(0.18), foreground: DS.danger)
                     Pill("Accent", tint: DS.accent.opacity(0.15))
                 }
                 MicroLabel("Micro label sample")

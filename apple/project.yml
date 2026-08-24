@@ -25,6 +25,7 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_KEY_CFBundleDisplayName: Paddltir
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UIUserInterfaceStyle: Light
         SWIFT_VERSION: "6.0"
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_IDENTITY: ""

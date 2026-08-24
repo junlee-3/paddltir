@@ -4,7 +4,12 @@ import SwiftUI
 public struct Pill: View {
     let text: String
     var tint: Color?
-    public init(_ t: String, tint: Color? = nil) { text = t; self.tint = tint }
+    var foreground: Color?
+    public init(_ t: String, tint: Color? = nil, foreground: Color? = nil) {
+        text = t
+        self.tint = tint
+        self.foreground = foreground
+    }
     public var body: some View {
         Text(text)
             .font(.dsCaption)
@@ -12,6 +17,6 @@ public struct Pill: View {
             .padding(.vertical, 3)
             .background(tint ?? DS.surface2, in: .rect(cornerRadius: DS.R.sm))
             .overlay(RoundedRectangle(cornerRadius: DS.R.sm).stroke(tint == nil ? DS.border : .clear))
-            .foregroundStyle(tint == nil ? DS.ink : DS.accent)
+            .foregroundStyle(foreground ?? (tint == nil ? DS.ink : DS.accent))
     }
 }
