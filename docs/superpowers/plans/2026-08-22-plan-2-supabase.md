@@ -857,8 +857,16 @@ grant select on paddlers_with_power, paddlers_public to service_role;
 
 ### Task 6: Demo seed data
 
+> **Controller ruling (2026-08-25):** demo data must NOT live in `seed.sql`, because
+> `supabase test db` loads `seed.sql` and the demo club collides with the pgTAP tests
+> (which assume a near-empty DB). Put the demo `do $$…$$` block in a NEW file
+> `supabase/seed_dev.sql` (kept OUT of `config.toml`'s `db.seed.sql_paths`), leaving
+> `seed.sql` = helpers only. Devs load it on demand. Acceptance: `supabase test db` is
+> 93/93 green again, and `supabase db reset && psql "$DB_URL" -f supabase/seed_dev.sql`
+> loads the demo with the counts below.
+
 **Files:**
-- Modify: `supabase/seed.sql` (append demo data after helpers)
+- Create: `supabase/seed_dev.sql` (the demo `do $$…$$` block)
 
 - [ ] **Step 1: Append demo data**
 
