@@ -1,0 +1,80 @@
+import SwiftUI
+
+/// App navigation shell — a `TabView` on iOS (Schedule / Crews / Squad, plus a DEBUG-only
+/// Design tab exercising the whole design system), and a `NavigationSplitView` on macOS.
+struct RootView: View {
+    #if os(iOS)
+    #if DEBUG
+    // Default-select the Design tab in DEBUG so a launched screenshot lands on the gallery.
+    @State private var selection = 3
+    #else
+    @State private var selection = 0
+    #endif
+    #endif
+
+    var body: some View {
+        #if os(macOS)
+        NavigationSplitView {
+            SidebarList(selection: $macSelection)
+        } detail: {
+            macDetail
+        }
+        .tint(DS.accent)
+        #else
+        TabView(selection: $selection) {
+            SchedulePlaceholder()
+                .tabItem { Label("Schedule", systemImage: "calendar") }
+                .tag(0)
+            CrewsPlaceholder()
+                .tabItem { Label("Crews", systemImage: "figure.water.fitness") }
+                .tag(1)
+            SquadPlaceholder()
+                .tabItem { Label("Squad", systemImage: "person.3") }
+                .tag(2)
+            #if DEBUG
+            DesignSystemGallery()
+                .tabItem { Label("Design", systemImage: "paintpalette") }
+                .tag(3)
+            #endif
+        }
+        .tint(DS.accent)
+        #endif
+    }
+
+    #if os(macOS)
+    @State private var macSelection: SidebarSection? = .schedule
+
+    @ViewBuilder private var macDetail: some View {
+        switch macSelection ?? .schedule {
+        case .schedule: SchedulePlaceholder()
+        case .crews: CrewsPlaceholder()
+        case .squad: SquadPlaceholder()
+        }
+    }
+    #endif
+}
+
+#if os(macOS)
+private enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
+    case schedule = "Schedule", crews = "Crews", squad = "Squad"
+    var id: String { rawValue }
+    var systemImage: String {
+        switch self {
+        case .schedule: "calendar"
+        case .crews: "figure.water.fitness"
+        case .squad: "person.3"
+        }
+    }
+}
+
+/// Simple sidebar listing the three top-level sections.
+private struct SidebarList: View {
+    @Binding var selection: SidebarSection?
+    var body: some View {
+        List(SidebarSection.allCases, selection: $selection) { section in
+            Label(section.rawValue, systemImage: section.systemImage).tag(section)
+        }
+        .navigationTitle("Paddltir")
+    }
+}
+#endif

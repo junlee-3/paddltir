@@ -1,0 +1,52 @@
+name: Paddltir
+options:
+  bundleIdPrefix: app.paddltir
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+packages:
+  PaddltirCore:
+    path: ../packages/PaddltirCore
+targets:
+  Paddltir:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: Sources
+    resources:
+      - path: Sources/Resources
+    dependencies:
+      - package: PaddltirCore
+    settings:
+      base:
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_KEY_CFBundleDisplayName: Paddltir
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UIUserInterfaceStyle: Light
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
+        ENABLE_PREVIEWS: "YES"
+        ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS: "NO"
+  PaddltirAppTests:
+    type: bundle.unit-test
+    supportedDestinations: [iOS, macOS]
+    sources: [Tests/PaddltirAppTests]
+    dependencies:
+      - target: Paddltir
+    settings:
+      base:
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
+schemes:
+  Paddltir:
+    build:
+      targets: {Paddltir: all, PaddltirAppTests: [test]}
+    test:
+      targets: [PaddltirAppTests]
