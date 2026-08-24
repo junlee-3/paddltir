@@ -12,8 +12,14 @@ SQL got 3 opus reviews + a final RLS-hardening pass. No open Critical/Important 
 NEXT (phase boundary — awaiting Jun's steer, see checkpoint): (a) GO-LIVE = create hosted Supabase
 project (Task 7, ap-southeast-2) + Vercel deploy + Plan 6 integration (end-to-end SQL exec against
 merged schema, the deferred solver hardening: UUID-validate heatId, httpx reuse, auth-before-conn).
-(b) APPS = visual direction (frontend-design + ui-ux-pro-max + imagegen concepts for Jun to review),
-then Plan 4 (SwiftUI coach app) + Plan 5 (paddler PWA). Both were written to start AFTER visual direction.
+(b) APPS = building the coach app now. VISUAL DIRECTION SET & APPROVED by Jun (2026-08-25):
+**enhanced CrewCoach identity** — slate-on-white data tool, hairline borders, green=Male/amber=Female
+tiles + emerald/red balance verdicts KEPT EXACTLY; enhancements = single teal accent #0D7377,
+Inter Tight sans throughout (NO serif), LIGHT MODE ONLY (v1), native Liquid Glass on floating chrome,
+8px geometry, tabular numerals. Tokens in docs/design/direction.md; concept board in
+docs/design/concepts/coach-app-concepts.html. Jun rejected the initial water/teal identity and 4
+alt directions; wanted "CrewCoach but enhanced". NEXT: write Plan 4 (coach app) → build.
+Then Plan 5 (paddler PWA), go-live (hosted Supabase + Vercel), Plan 6 integration.
 
 ## (was) Phase 1 — Plans 1–3 (core, supabase, solver). Spec approved 2026-08-22.
 Plans live in `docs/superpowers/plans/` — start from `2026-08-22-roadmap.md`.
