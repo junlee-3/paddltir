@@ -32,8 +32,9 @@ and make it feel premium.
    could be added later without a rework, but v1 ships light-only — do not build dark surfaces now.
 4. **Premium Apple polish + Liquid Glass** on floating chrome — the native enhancement CrewCoach (a web
    app) couldn't have. Lean into the glass on the heat switcher, toolbar, reserves tray, balance bar.
-5. **Refined geometry**: keep it crisp (CrewCoach's 2px is *too* sharp for touch) → 8px cards / 6px
-   controls / 8px tiles. Hairline borders remain the primary depth cue; shadows stay restrained.
+5. **Refined geometry**: keep it crisp (CrewCoach's 2px is *too* sharp for touch) → **12px cards** / 8px
+   controls / 6px control-sm / 8px tiles (shipped DS.R values). Hairline borders remain the primary depth
+   cue; shadows stay restrained.
 6. **Tabular numerals everywhere** data appears; better spacing rhythm and touch density than the web app.
 
 ## Palette — CrewCoach slate + teal (light only, v1)
