@@ -735,7 +735,8 @@ create policy paddlers_update on paddlers for update to authenticated using (clu
 -- helper keeps policies off RLS-protected subqueries (recursion-proof, like the other *_club helpers)
 create or replace function paddler_club(p_paddler uuid) returns uuid
 language sql stable security definer set search_path = public as $$ select club_id from paddlers where id = p_paddler $$;
-grant execute on function paddler_club(uuid) to authenticated;
+revoke execute on function paddler_club(uuid) from public, anon;   -- created after 0002's blanket revoke; lock it down here
+grant execute on function paddler_club(uuid) to authenticated, service_role;
 
 create policy erg_select_coach on erg_tests for select to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
 create policy erg_select_self on erg_tests for select to authenticated using (paddler_id = my_paddler_id());
