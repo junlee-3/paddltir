@@ -17,12 +17,18 @@ public struct SwapSuggestion: Hashable, Codable, Sendable {
     public var before: Metrics
     public var after: Metrics
     public var improves: Improvement
+    public init(a: Seat, b: Seat, before: Metrics, after: Metrics, improves: Improvement) {
+        self.a = a; self.b = b; self.before = before; self.after = after; self.improves = improves
+    }
 }
 
 public struct ReplacementPlan: Hashable, Codable, Sendable {
     public var incoming: PaddlerID
     public var moves: [Move]
     public var after: Metrics
+    public init(incoming: PaddlerID, moves: [Move], after: Metrics) {
+        self.incoming = incoming; self.moves = moves; self.after = after
+    }
 }
 
 extension Lineup {
