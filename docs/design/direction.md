@@ -1,76 +1,87 @@
-# Paddltir — Visual Direction
+# Paddltir — Visual Direction (CrewCoach, enhanced)
 
 *Native SwiftUI, iOS 26 + macOS 26. Premium Apple sensibility, real Liquid Glass, full light + dark.*
 
-Design skills consulted: frontend-design, ui-ux-pro-max (its default sports-app recommendation
-— team red / Barlow Condensed / "vibrant block-based" — was deliberately rejected as generic;
-the brief calls for Apple-first-party restraint and a water identity, not an energetic sports look).
+**Direction chosen by Jun (2026-08-25): carry the CrewCoach look & colour scheme forward, elevated.**
+Not the water/teal-identity that was explored and rejected. The job is to keep CrewCoach recognisable
+and make it feel premium.
 
-## Thesis — "a boat that sits level"
-The core job of the product is **balance**: a level hull sits flat and runs true; an unbalanced one
-lists and veers. That physical truth is the whole design language. The interface is calm and precise
-when a lineup is balanced, and introduces subtle visual *tension* (a tilt, a warmed edge) when it
-isn't. This is specific to dragon boat and cannot be mistaken for a generic roster app.
+## What CrewCoach is (preserve these — they are the identity)
+- A **clean, dense, utilitarian data tool**: near-monochrome **slate on off-white**, depth from
+  **1px hairline borders**, not shadows; crisp near-square geometry; tiny **UPPERCASE tracked
+  micro-labels**; a confident **slate-900 primary button**; **Inter Tight** throughout.
+- **Colour is only semantic**, and it pops because everything around it is grey:
+  - **Gender tiles (load-bearing):** Male = green (`#DCFCE7` fill / `#86EFAC` border);
+    Female = amber (`#FEF3C7` fill / `#FCD34D` border).
+  - **Balance verdicts:** good = emerald `#059669`; over threshold = red `#DC2626` (bold).
+- A separate warm **landing brand**: cream paper, **Playfair Display** serif headlines, teal CTA
+  `#0D7377`, softer shapes.
 
-## Signature — the Balance HUD as a bubble-level
-The live balance readout is NOT a row of stat tiles. It is a **water-line**: a horizontal liquid
-surface that tilts left/right with weight imbalance and rides high/low bow/stern with trim, settling
-flat with a spring when the lineup comes into balance. Four quiet gauges (weight Δ, power Δ, side/seat
-prefs, trim) and a gender badge sit under it. Spend the boldness here; keep everything else disciplined.
+## The enhancement (what "better" means)
+1. **Reconcile the two CrewCoach systems.** Keep the app's disciplined slate/white data-density AND
+   borrow the landing's typographic character: **Playfair Display** for display/brand moments
+   (wordmark, big screen titles, the hero metric), **Inter Tight** for all UI and data. This is the
+   single biggest lift in perceived quality.
+2. **Unify one brand accent: teal `#0D7377`** (already CrewCoach's landing CTA). Used for active nav,
+   selection, focus, links, and brand marks. The **primary action stays slate-900** (that black button
+   is premium) — teal is the identity accent, not the button colour.
+3. **First-class dark mode** (CrewCoach had none; the new product requires it). Slate-950 grounds,
+   brightened teal + status colours, borders become light hairlines.
+4. **Premium Apple polish + Liquid Glass** on floating chrome — the native enhancement CrewCoach (a web
+   app) couldn't have.
+5. **Refined geometry**: keep it crisp (CrewCoach's 2px is *too* sharp for touch) → 8px cards / 6px
+   controls / 8px tiles. Hairline borders remain the primary depth cue; shadows stay restrained.
+6. **Tabular numerals everywhere** data appears; better spacing rhythm and touch density than the web app.
 
-## Palette — water & dawn (cohesive, calm status colors)
-Semantic tokens (SwiftUI `Color` asset catalog, light / dark):
-
-| token | light | dark | use |
+## Palette — CrewCoach slate + teal (light / dark)
+| token | light | dark | role |
 |---|---|---|---|
-| `bg`            | `#F5F3EE` | `#0A1A22` | app background (warm bone / river-at-dusk) |
-| `surface`       | `#FFFFFF` | `#12262F` | hull, cards (solid, legible — never glass) |
-| `surface2`      | `#ECEFEF` | `#1A333D` | section bands, insets |
-| `ink`           | `#10242E` | `#EAF1F0` | primary text (≥ 12:1 on surface) |
-| `inkSecondary`  | `#4A5A62` | `#9FB4B7` | secondary text (≥ 4.5:1) |
-| `accent`        | `#0B7E7A` | `#35C4BE` | river teal — selection, active, the water line |
-| `good`          | `#2F8F5B` | `#4CC585` | balanced / within threshold |
-| `warn`          | `#9A6A1E` (text) / `#C98A2E` (fill) | `#E8B057` | over threshold (amber, paddle-wood) |
-| `danger`        | `#C2453C` | `#E8635A` | hard violation (gender rule, duplicate) — muted, never fire-engine |
-| `hairline`      | `#00000014` | `#FFFFFF1A` | dividers, seat borders |
+| `bg`           | `#FAFAFA` | `#0B0F14` | app background (CrewCoach off-white) |
+| `surface`      | `#FFFFFF` | `#111820` | cards, hull, main panel |
+| `surface2`     | `#F8FAFC` | `#18212B` | insets, table head, section bands (slate-50) |
+| `ink`          | `#0F172A` | `#E6EDF3` | primary text (slate-900) |
+| `ink2`         | `#475569` | `#94A3B8` | secondary (slate-600 / slate-400) |
+| `ink3`         | `#64748B` | `#64748B` | muted / micro-labels (slate-500) |
+| `border`       | `#E2E8F0` | `#243040` | hairline — the CrewCoach depth cue (slate-200) |
+| `primary`      | `#0F172A` | `#E6EDF3` | primary button (slate-900 → near-white on dark) |
+| `accent`       | `#0D7377` | `#2CB7B0` | brand teal — active, selection, focus, links |
+| `good`         | `#059669` | `#34D399` | balanced / within threshold (emerald-600) |
+| `danger`       | `#DC2626` | `#F87171` | over threshold / violation (red-600) |
+| `maleFill`/`maleBrd`     | `#DCFCE7` / `#86EFAC` | `#16351f` / `#2f6b3d` | Male tile |
+| `femaleFill`/`femaleBrd` | `#FEF3C7` / `#FCD34D` | `#3a2f10` / `#7a6320` | Female tile |
 
-Gender is shown by a hairline/side-dot, never a loud fill (the old app's green/amber tiles read cheap).
-
-## Typography — native, numerals are the star
-- **SF Pro Text / Display** for all UI. Dynamic Type throughout; never truncate data labels.
-- **SF Pro Rounded** for numeric readouts, the Balance HUD figures, and section headers — the rounded
-  variant reads calmer/more "water" and marks the readout moments, while staying 100% native + free.
-- **Tabular figures** everywhere numbers appear (weights, erg, deltas, seat numbers) — no layout jitter.
-- Type scale (pt): 34 largeTitle · 28/22 title · 17 headline(semibold) · 17 body · 16 callout ·
-  15 subhead · 13 footnote · 12 caption. HUD hero number 44 rounded-bold tabular.
-- Consider (not committed): New York for the wordmark only — a subtle heritage nod. In-app stays SF.
+## Typography
+- **Inter Tight** — all UI, data, labels. Weights 500/600 dominant; headings semibold `tracking-tight`.
+  Micro-labels: `text-xs`/`11px` UPPERCASE, `tracking-wider`, slate-500. Tabular figures for all numbers.
+- **Playfair Display** (600/700, italic for emphasis) — the wordmark, large screen titles, the hero
+  metric on the Up-next card. Used with restraint; this is the "premium editorial" borrow from the
+  CrewCoach landing that lifts the whole app.
+- Native note: on device, Inter Tight is bundled; Playfair Display bundled for display only. (SF Pro is
+  the fallback, but Inter Tight *is* the CrewCoach signature and is kept.)
 
 ## Liquid Glass — floating chrome only (real APIs)
-`.glassEffect()`, `GlassEffectContainer`, `glassEffectID` (morph transitions), `.buttonStyle(.glass)`.
-- **Glass:** heat-switcher capsule, Balance HUD bar, reserves tray sheet, toolbar (Suggest/Auto-fill/
-  Optimise/Share), the "Up next" floating actions. Glass edges pick up the teal accent.
-- **Solid, high-legibility:** the boat hull grid and every dense-data surface. *Glass over numbers is
-  unreadable* — the brief says this explicitly; obey it.
+`.glassEffect()`, `GlassEffectContainer`, `glassEffectID`, `.buttonStyle(.glass)`.
+Glass: heat-switcher capsule, the toolbar (Suggest/Auto-fill/Optimise/Share), the reserves tray, the
+Up-next floating actions. Solid + hairline-bordered: the boat hull grid, tables, every dense surface.
+*Glass over numbers is unreadable — obey it.*
 
-## Motion — physical, spring, interruptible
-- Seat drag: long-press lift (scale 1.03 + shadow + haptic), targets highlight, drop = spring; a
-  displaced card springs back to origin. Gauges preview the delta live while dragging.
-- **Signature motion:** the HUD water-line *settles* with a spring when balance is reached (a small
-  "click into level"). Reduced-motion: it snaps flat instead of sloshing.
-- Heat switch + suggestion-apply: matched geometry (`glassEffectID`). Durations 200–320ms, spring
-  curves; exits ~70% of enter. Never block input mid-animation.
+## Balance telemetry (enhance CrewCoach's "Crew Controls", don't replace it)
+Keep the CrewCoach **2-column stat grid** whose verdicts flip **emerald (ok) ↔ red bold (warn)** at the
+same thresholds (`weight Δ 10kg`, `power Δ 10%`, `side-pref 80%`, `trim Δ 50kg`), plus the gender count
+vs rule. Elevate it: a glass bar, tabular numerals, a slim horizontal **balance beam** (a hairline with
+a teal/amber indicator that slides off-centre when the hull lists) as a refined at-a-glance cue above
+the stats. This is CrewCoach's telemetry, made premium — not the rejected water-line.
 
-## Data density done well
-The seating grid is tabular by nature — make it beautiful, not fought. `L | bench# · section | R`
-rhythm, subtly shaded section bands (Stroke/Pace/Engine/Sprint), tabular numerals, restrained color
-(color appears only for a violated pref or a threshold breach). Mac/iPad: hull centred, right inspector.
+## Motion, density, quality floor
+Physical spring drag with haptics; matched-geometry heat switch (`glassEffectID`); 200–320ms springs,
+exits ~70%; reduced-motion honoured. Dense tables done beautifully (tabular nums, subtle slate-50 head,
+hairline dividers, hover). Contrast ≥ 4.5:1 both themes; 44pt targets; VoiceOver on seats/gauges;
+Dynamic Type; safe-area aware. Custom favicon/wordmark (CrewCoach had the default Vite icon — replace it).
 
 ## Component inventory (coach app)
-Glass: HeatSwitcher capsule · BalanceHUD (water-line + 4 gauges + gender badge) · ReservesTray ·
-GlassToolbar · UpNext actions. Solid: SeatCard · HullGrid · SectionBand · CrewCard · SquadRow ·
-AvailabilityList · OptimiseProgressSheet (honest per-stage ✓ proven / ≈ best-found). 
-Navigation: iPhone 3-tab (Schedule · Crews · Squad) + avatar; iPad/Mac NavigationSplitView.
-
-## Quality floor (non-negotiable)
-Contrast ≥ 4.5:1 both themes · 44pt targets · VoiceOver labels on every seat/gauge · Dynamic Type to
-largest without breakage · reduced-motion honored · safe-area aware · both themes designed together.
+Glass: HeatSwitcher · GlassToolbar · ReservesTray · UpNext actions · BalanceBar.
+Solid + hairline: SeatTile (green/amber gender, name · role letter · side · weight) · HullGrid ·
+SectionBand · TelemetryGrid (emerald/red verdicts) · RosterTable · SquadRow · CrewCard ·
+AvailabilityRing · OptimiseSheet (honest per-stage ✓ proven / ≈ best-found).
+Nav: iPhone 3-tab (Schedule · Crews · Squad) with a **teal left-accent-bar active state** (CrewCoach's
+own nav pattern) on iPad/Mac sidebar; NavigationSplitView on the big screens.
