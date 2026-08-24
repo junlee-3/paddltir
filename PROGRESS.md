@@ -52,7 +52,7 @@ fixtures to land on main (then `git merge main` into plan-3-solver).
 - [x] Spec written and approved (docs/superpowers/specs/2026-08-22-paddltir-design.md)
 - [x] Roadmap + Plans 1–3 written and self-reviewed (docs/superpowers/plans/)
 - [x] **Plan 1 (PaddltirCore): MERGED to main** (commit 40a7882). 12 tasks, 56/56 tests, 0 warnings, greedy auto-fill ≈3ms release, golden fixtures. Final whole-branch review clean. Branch+worktree deleted. Rulings recorded in git history + scratchpad ledger copy.
-- [~] Plan 2 (Supabase): tasks 1–6 + local wrap COMPLETE (3 opus security reviews; RLS write-policy hardening in final re-review now); 93 pgTAP tests green. Task 7 (hosted project) = go-live. Ready to merge after RLS re-review.
+- [x] **Plan 2 (Supabase): MERGED to main** (commit 2c34fac). 4 migrations (tables/RPCs/RLS/views), helpers+demo seed split, 98 pgTAP tests. THREE opus security reviews + final-review RLS hardening — every cross-tenant write/read path closed and live-probe-verified. Task 7 (hosted project) + Vercel deploy = go-live. Branch+worktree deleted.
 - [x] **Plan 3 (Solver): MERGED to main** (commit e6aa5e0). Python model + scoring (EXACT cross-lang parity), lexicographic HiGHS MIP (y-reformulation proves all provable stages ~161ms), MIP goldens, auth/db/cache adapters, FastAPI /api/optimize (authz-ordered, cache), vercel.json. 25 tests. Final review clean. LIVE deploy deferred to go-live. Branch+worktree deleted.
 
 ## Next
