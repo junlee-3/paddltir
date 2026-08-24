@@ -216,6 +216,9 @@ struct DesignSystemGallery: View {
         Paddler(id: PaddlerID("fay"), name: "Fay", weightKg: 60, ergM: 470, side: .left, gender: .female, seatPref: .none, role: .paddler),
     ])
     private static let sampleMetrics = Scoring.evaluate(sampleLineup, roster: sampleRoster)
+    /// Illustrative normalised weight balance for `BalanceBeam` — left-heavy, matching the
+    /// weight warning shown in the grid above.
+    private static let sampleImbalance: Double = -0.35
 
     private var telemetrySection: some View {
         section("Telemetry") {
@@ -223,6 +226,10 @@ struct DesignSystemGallery: View {
                 VStack(alignment: .leading, spacing: DS.Space.m) {
                     GenderBadge(metrics: Self.sampleMetrics)
                     TelemetryGrid(metrics: Self.sampleMetrics, boat: Self.sampleBoat)
+                    VStack(alignment: .leading, spacing: DS.Space.xs) {
+                        MicroLabel("Balance")
+                        BalanceBeam(imbalance: Self.sampleImbalance, label: "Weight balance")
+                    }
                 }
             }
         }

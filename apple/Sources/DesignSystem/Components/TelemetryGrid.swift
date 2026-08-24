@@ -1,16 +1,6 @@
 import SwiftUI
 import PaddltirCore
 
-/// A single label/value row in a `TelemetryGrid`. Exposed so callers can build a warning
-/// summary or a legend from the same data without recomputing colours.
-public struct TelemetryItem: Identifiable {
-    public let label: String
-    public let value: String
-    public let ok: Bool
-    public var id: String { label }
-    public init(label: String, value: String, ok: Bool) { self.label = label; self.value = value; self.ok = ok }
-}
-
 /// 2-column grid of lineup telemetry — weight/power balance, trim, side preference —
 /// coloured `DS.good` when within threshold and `DS.danger` when `metrics.warnings(boat:thresholds:)` flags it.
 public struct TelemetryGrid: View {
