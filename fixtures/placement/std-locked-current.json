@@ -1,0 +1,496 @@
+{
+  "boat" : {
+    "benches" : 10
+  },
+  "current" : [
+    {
+      "bench" : 1,
+      "paddlerId" : "w02",
+      "side" : "left"
+    },
+    {
+      "bench" : 1,
+      "paddlerId" : "m01",
+      "side" : "right"
+    },
+    {
+      "bench" : 2,
+      "paddlerId" : "m12",
+      "side" : "left"
+    },
+    {
+      "bench" : 2,
+      "paddlerId" : "m10",
+      "side" : "right"
+    },
+    {
+      "bench" : 3,
+      "paddlerId" : "w04",
+      "side" : "left"
+    },
+    {
+      "bench" : 3,
+      "paddlerId" : "m02",
+      "side" : "right"
+    },
+    {
+      "bench" : 4,
+      "paddlerId" : "m06",
+      "side" : "left"
+    },
+    {
+      "bench" : 4,
+      "paddlerId" : "m04",
+      "side" : "right"
+    },
+    {
+      "bench" : 5,
+      "paddlerId" : "m03",
+      "side" : "left"
+    },
+    {
+      "bench" : 5,
+      "paddlerId" : "w05",
+      "side" : "right"
+    },
+    {
+      "bench" : 6,
+      "paddlerId" : "m11",
+      "side" : "left"
+    },
+    {
+      "bench" : 6,
+      "paddlerId" : "w07",
+      "side" : "right"
+    },
+    {
+      "bench" : 7,
+      "paddlerId" : "m05",
+      "side" : "left"
+    },
+    {
+      "bench" : 7,
+      "paddlerId" : "w01",
+      "side" : "right"
+    },
+    {
+      "bench" : 8,
+      "paddlerId" : "w09",
+      "side" : "left"
+    },
+    {
+      "bench" : 8,
+      "paddlerId" : "m08",
+      "side" : "right"
+    },
+    {
+      "bench" : 9,
+      "paddlerId" : "w08",
+      "side" : "left"
+    },
+    {
+      "bench" : 9,
+      "paddlerId" : "m09",
+      "side" : "right"
+    },
+    {
+      "bench" : 10,
+      "paddlerId" : "w03",
+      "side" : "left"
+    },
+    {
+      "bench" : 10,
+      "paddlerId" : "m07",
+      "side" : "right"
+    }
+  ],
+  "description" : "Same roster as std-mixed-22 but with two locked seats and a reference lineup (std-mixed-22's greedy golden) for the moves tie-break.",
+  "drummerId" : "drum",
+  "expected" : {
+    "greedy" : {
+      "metrics" : {
+        "men" : 12,
+        "moves" : 15,
+        "powerLeft" : 5905,
+        "powerRight" : 5935,
+        "seatMismatches" : 2,
+        "seated" : 20,
+        "sideMismatches" : 5,
+        "totalPower" : 11840,
+        "trimMoment" : 62,
+        "weightLeft" : 744,
+        "weightRight" : 743,
+        "women" : 8
+      },
+      "ruleSatisfied" : true,
+      "seats" : [
+        {
+          "bench" : 1,
+          "locked" : true,
+          "paddlerId" : "w02",
+          "side" : "left"
+        },
+        {
+          "bench" : 1,
+          "locked" : true,
+          "paddlerId" : "m01",
+          "side" : "right"
+        },
+        {
+          "bench" : 2,
+          "paddlerId" : "w04",
+          "side" : "left"
+        },
+        {
+          "bench" : 2,
+          "paddlerId" : "m02",
+          "side" : "right"
+        },
+        {
+          "bench" : 3,
+          "paddlerId" : "w03",
+          "side" : "left"
+        },
+        {
+          "bench" : 3,
+          "paddlerId" : "m12",
+          "side" : "right"
+        },
+        {
+          "bench" : 4,
+          "paddlerId" : "m06",
+          "side" : "left"
+        },
+        {
+          "bench" : 4,
+          "paddlerId" : "m04",
+          "side" : "right"
+        },
+        {
+          "bench" : 5,
+          "paddlerId" : "m03",
+          "side" : "left"
+        },
+        {
+          "bench" : 5,
+          "paddlerId" : "m05",
+          "side" : "right"
+        },
+        {
+          "bench" : 6,
+          "paddlerId" : "m08",
+          "side" : "left"
+        },
+        {
+          "bench" : 6,
+          "paddlerId" : "w05",
+          "side" : "right"
+        },
+        {
+          "bench" : 7,
+          "paddlerId" : "m11",
+          "side" : "left"
+        },
+        {
+          "bench" : 7,
+          "paddlerId" : "w07",
+          "side" : "right"
+        },
+        {
+          "bench" : 8,
+          "paddlerId" : "m09",
+          "side" : "left"
+        },
+        {
+          "bench" : 8,
+          "paddlerId" : "m10",
+          "side" : "right"
+        },
+        {
+          "bench" : 9,
+          "paddlerId" : "m07",
+          "side" : "left"
+        },
+        {
+          "bench" : 9,
+          "paddlerId" : "w09",
+          "side" : "right"
+        },
+        {
+          "bench" : 10,
+          "paddlerId" : "w08",
+          "side" : "left"
+        },
+        {
+          "bench" : 10,
+          "paddlerId" : "w01",
+          "side" : "right"
+        }
+      ]
+    }
+  },
+  "locked" : [
+    {
+      "bench" : 1,
+      "locked" : true,
+      "paddlerId" : "w02",
+      "side" : "left"
+    },
+    {
+      "bench" : 1,
+      "locked" : true,
+      "paddlerId" : "m01",
+      "side" : "right"
+    }
+  ],
+  "name" : "std-locked-current",
+  "paddlers" : [
+    {
+      "ergM" : 520,
+      "gender" : "female",
+      "id" : "w01",
+      "name" : "W01",
+      "role" : "paddler",
+      "seatPref" : "stroke",
+      "side" : "left",
+      "weightKg" : 58
+    },
+    {
+      "ergM" : 540,
+      "gender" : "female",
+      "id" : "w02",
+      "name" : "W02",
+      "role" : "paddler",
+      "seatPref" : "stroke",
+      "side" : "right",
+      "weightKg" : 62
+    },
+    {
+      "ergM" : 500,
+      "gender" : "female",
+      "id" : "w03",
+      "name" : "W03",
+      "role" : "paddler",
+      "seatPref" : "pace",
+      "side" : "left",
+      "weightKg" : 60
+    },
+    {
+      "ergM" : 515,
+      "gender" : "female",
+      "id" : "w04",
+      "name" : "W04",
+      "role" : "paddler",
+      "seatPref" : "pace",
+      "side" : "either",
+      "weightKg" : 64
+    },
+    {
+      "ergM" : 530,
+      "gender" : "female",
+      "id" : "w05",
+      "name" : "W05",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "right",
+      "weightKg" : 66
+    },
+    {
+      "ergM" : 490,
+      "gender" : "female",
+      "id" : "w06",
+      "name" : "W06",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "left",
+      "weightKg" : 59
+    },
+    {
+      "ergM" : 505,
+      "gender" : "female",
+      "id" : "w07",
+      "name" : "W07",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "right",
+      "weightKg" : 63
+    },
+    {
+      "ergM" : 495,
+      "gender" : "female",
+      "id" : "w08",
+      "name" : "W08",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "either",
+      "weightKg" : 61
+    },
+    {
+      "ergM" : 510,
+      "gender" : "female",
+      "id" : "w09",
+      "name" : "W09",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "left",
+      "weightKg" : 65
+    },
+    {
+      "ergM" : 480,
+      "gender" : "female",
+      "id" : "w10",
+      "name" : "W10",
+      "role" : "paddler",
+      "seatPref" : "none",
+      "side" : "right",
+      "weightKg" : 57
+    },
+    {
+      "ergM" : 640,
+      "gender" : "male",
+      "id" : "m01",
+      "name" : "M01",
+      "role" : "paddler",
+      "seatPref" : "stroke",
+      "side" : "left",
+      "weightKg" : 78
+    },
+    {
+      "ergM" : 660,
+      "gender" : "male",
+      "id" : "m02",
+      "name" : "M02",
+      "role" : "paddler",
+      "seatPref" : "pace",
+      "side" : "right",
+      "weightKg" : 82
+    },
+    {
+      "ergM" : 650,
+      "gender" : "male",
+      "id" : "m03",
+      "name" : "M03",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "left",
+      "weightKg" : 85
+    },
+    {
+      "ergM" : 670,
+      "gender" : "male",
+      "id" : "m04",
+      "name" : "M04",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "right",
+      "weightKg" : 88
+    },
+    {
+      "ergM" : 630,
+      "gender" : "male",
+      "id" : "m05",
+      "name" : "M05",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "either",
+      "weightKg" : 80
+    },
+    {
+      "ergM" : 680,
+      "gender" : "male",
+      "id" : "m06",
+      "name" : "M06",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "left",
+      "weightKg" : 90
+    },
+    {
+      "ergM" : 620,
+      "gender" : "male",
+      "id" : "m07",
+      "name" : "M07",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "right",
+      "weightKg" : 76
+    },
+    {
+      "ergM" : 645,
+      "gender" : "male",
+      "id" : "m08",
+      "name" : "M08",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "left",
+      "weightKg" : 84
+    },
+    {
+      "ergM" : 635,
+      "gender" : "male",
+      "id" : "m09",
+      "name" : "M09",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "either",
+      "weightKg" : 79
+    },
+    {
+      "ergM" : 655,
+      "gender" : "male",
+      "id" : "m10",
+      "name" : "M10",
+      "role" : "paddler",
+      "seatPref" : "none",
+      "side" : "right",
+      "weightKg" : 86
+    },
+    {
+      "ergM" : 625,
+      "gender" : "male",
+      "id" : "m11",
+      "name" : "M11",
+      "role" : "paddler",
+      "seatPref" : "none",
+      "side" : "left",
+      "weightKg" : 83
+    },
+    {
+      "ergM" : 615,
+      "gender" : "male",
+      "id" : "m12",
+      "name" : "M12",
+      "role" : "paddler",
+      "seatPref" : "pace",
+      "side" : "right",
+      "weightKg" : 77
+    },
+    {
+      "ergM" : 0,
+      "gender" : "female",
+      "id" : "drum",
+      "name" : "DRUM",
+      "role" : "drummer",
+      "seatPref" : "none",
+      "side" : "either",
+      "weightKg" : 52
+    },
+    {
+      "ergM" : 0,
+      "gender" : "male",
+      "id" : "sweep",
+      "name" : "SWEEP",
+      "role" : "sweep",
+      "seatPref" : "none",
+      "side" : "either",
+      "weightKg" : 81
+    }
+  ],
+  "rule" : {
+    "maxMen" : 12,
+    "maxWomen" : 12,
+    "minMen" : 8,
+    "minWomen" : 8
+  },
+  "sweepId" : "sweep"
+}

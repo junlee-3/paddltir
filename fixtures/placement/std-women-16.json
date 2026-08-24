@@ -1,0 +1,294 @@
+{
+  "boat" : {
+    "benches" : 10
+  },
+  "description" : "16 women candidates for a standard 10-bench (20-seat) boat, women-only rule. Fewer candidates than seats.",
+  "drummerId" : "drum",
+  "expected" : {
+    "greedy" : {
+      "metrics" : {
+        "men" : 0,
+        "powerLeft" : 4092,
+        "powerRight" : 4043,
+        "seatMismatches" : 1,
+        "seated" : 16,
+        "sideMismatches" : 4,
+        "totalPower" : 8135,
+        "trimMoment" : 35.5,
+        "weightLeft" : 497,
+        "weightRight" : 497,
+        "women" : 16
+      },
+      "ruleSatisfied" : true,
+      "seats" : [
+        {
+          "bench" : 1,
+          "paddlerId" : "w02",
+          "side" : "left"
+        },
+        {
+          "bench" : 2,
+          "paddlerId" : "w03",
+          "side" : "left"
+        },
+        {
+          "bench" : 2,
+          "paddlerId" : "w04",
+          "side" : "right"
+        },
+        {
+          "bench" : 3,
+          "paddlerId" : "w01",
+          "side" : "left"
+        },
+        {
+          "bench" : 3,
+          "paddlerId" : "w11",
+          "side" : "right"
+        },
+        {
+          "bench" : 4,
+          "paddlerId" : "w13",
+          "side" : "left"
+        },
+        {
+          "bench" : 4,
+          "paddlerId" : "w12",
+          "side" : "right"
+        },
+        {
+          "bench" : 5,
+          "paddlerId" : "w10",
+          "side" : "left"
+        },
+        {
+          "bench" : 5,
+          "paddlerId" : "w05",
+          "side" : "right"
+        },
+        {
+          "bench" : 6,
+          "paddlerId" : "w07",
+          "side" : "right"
+        },
+        {
+          "bench" : 7,
+          "paddlerId" : "w06",
+          "side" : "right"
+        },
+        {
+          "bench" : 8,
+          "paddlerId" : "w09",
+          "side" : "left"
+        },
+        {
+          "bench" : 8,
+          "paddlerId" : "w14",
+          "side" : "right"
+        },
+        {
+          "bench" : 9,
+          "paddlerId" : "w15",
+          "side" : "left"
+        },
+        {
+          "bench" : 9,
+          "paddlerId" : "w16",
+          "side" : "right"
+        },
+        {
+          "bench" : 10,
+          "paddlerId" : "w08",
+          "side" : "left"
+        }
+      ]
+    }
+  },
+  "name" : "std-women-16",
+  "paddlers" : [
+    {
+      "ergM" : 520,
+      "gender" : "female",
+      "id" : "w01",
+      "name" : "W01",
+      "role" : "paddler",
+      "seatPref" : "stroke",
+      "side" : "left",
+      "weightKg" : 58
+    },
+    {
+      "ergM" : 540,
+      "gender" : "female",
+      "id" : "w02",
+      "name" : "W02",
+      "role" : "paddler",
+      "seatPref" : "stroke",
+      "side" : "right",
+      "weightKg" : 62
+    },
+    {
+      "ergM" : 500,
+      "gender" : "female",
+      "id" : "w03",
+      "name" : "W03",
+      "role" : "paddler",
+      "seatPref" : "pace",
+      "side" : "left",
+      "weightKg" : 60
+    },
+    {
+      "ergM" : 515,
+      "gender" : "female",
+      "id" : "w04",
+      "name" : "W04",
+      "role" : "paddler",
+      "seatPref" : "pace",
+      "side" : "either",
+      "weightKg" : 64
+    },
+    {
+      "ergM" : 530,
+      "gender" : "female",
+      "id" : "w05",
+      "name" : "W05",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "right",
+      "weightKg" : 66
+    },
+    {
+      "ergM" : 490,
+      "gender" : "female",
+      "id" : "w06",
+      "name" : "W06",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "left",
+      "weightKg" : 59
+    },
+    {
+      "ergM" : 505,
+      "gender" : "female",
+      "id" : "w07",
+      "name" : "W07",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "right",
+      "weightKg" : 63
+    },
+    {
+      "ergM" : 495,
+      "gender" : "female",
+      "id" : "w08",
+      "name" : "W08",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "either",
+      "weightKg" : 61
+    },
+    {
+      "ergM" : 510,
+      "gender" : "female",
+      "id" : "w09",
+      "name" : "W09",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "left",
+      "weightKg" : 65
+    },
+    {
+      "ergM" : 480,
+      "gender" : "female",
+      "id" : "w10",
+      "name" : "W10",
+      "role" : "paddler",
+      "seatPref" : "none",
+      "side" : "right",
+      "weightKg" : 57
+    },
+    {
+      "ergM" : 470,
+      "gender" : "female",
+      "id" : "w11",
+      "name" : "W11",
+      "role" : "paddler",
+      "seatPref" : "pace",
+      "side" : "left",
+      "weightKg" : 56
+    },
+    {
+      "ergM" : 545,
+      "gender" : "female",
+      "id" : "w12",
+      "name" : "W12",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "right",
+      "weightKg" : 68
+    },
+    {
+      "ergM" : 535,
+      "gender" : "female",
+      "id" : "w13",
+      "name" : "W13",
+      "role" : "paddler",
+      "seatPref" : "engine",
+      "side" : "left",
+      "weightKg" : 70
+    },
+    {
+      "ergM" : 500,
+      "gender" : "female",
+      "id" : "w14",
+      "name" : "W14",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "right",
+      "weightKg" : 62
+    },
+    {
+      "ergM" : 512,
+      "gender" : "female",
+      "id" : "w15",
+      "name" : "W15",
+      "role" : "paddler",
+      "seatPref" : "sprint",
+      "side" : "either",
+      "weightKg" : 64
+    },
+    {
+      "ergM" : 488,
+      "gender" : "female",
+      "id" : "w16",
+      "name" : "W16",
+      "role" : "paddler",
+      "seatPref" : "none",
+      "side" : "either",
+      "weightKg" : 59
+    },
+    {
+      "ergM" : 0,
+      "gender" : "female",
+      "id" : "drum",
+      "name" : "DRUM",
+      "role" : "drummer",
+      "seatPref" : "none",
+      "side" : "either",
+      "weightKg" : 52
+    },
+    {
+      "ergM" : 0,
+      "gender" : "male",
+      "id" : "sweep",
+      "name" : "SWEEP",
+      "role" : "sweep",
+      "seatPref" : "none",
+      "side" : "either",
+      "weightKg" : 81
+    }
+  ],
+  "rule" : {
+    "maxMen" : 0
+  },
+  "sweepId" : "sweep"
+}
