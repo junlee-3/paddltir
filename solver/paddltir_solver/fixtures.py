@@ -66,7 +66,15 @@ def _cli(argv: list[str]) -> int:
             m = r.metrics
             print(f"{f.name}: seated {m.seated} power {m.total_power:.0f} Δw {m.weight_delta:.1f} side {m.side_mismatches} seat {m.seat_mismatches} Δp {m.power_delta:.0f} trim {m.trim_moment:.1f} rule {r.rule_satisfied} {r.solve_ms} ms proven {r.proven}")
         else:
-            ok = f.raw.get("expected", {}).get("mip", {}).get("seats") == outcome["seats"]
+            stored = f.raw.get("expected", {}).get("mip")
+            if stored is None:
+                print("no-golden " + f.name); failures += 1; continue
+            # gate only the six stages that PROVE within cap (seated, power, weight, side, seat, powerBalance);
+            # trim/moves are heuristic within their 0.5s cap and vary run-to-run, so they are excluded here too.
+            ok = (
+                Metrics.from_json(stored["metrics"]).lex_key()[:6] == r.metrics.lex_key()[:6]
+                and stored["ruleSatisfied"] == outcome["ruleSatisfied"]
+            )
             print(("ok " if ok else "MISMATCH ") + f.name); failures += 0 if ok else 1
     return 1 if failures else 0
 

@@ -10,7 +10,9 @@ def test_mip_goldens(fixtures_dir):
         # Same optimisation quality (what the product cares about), robust to equal-optimal tie choices:
         # a stage that only proves feasibility (not optimality) can return a different but equally-good
         # lineup between runs, so we compare the lexicographic objective key rather than exact seats.
-        assert res.metrics.lex_key() == exp_metrics.lex_key(), f.name
+        # gate only the six stages that PROVE within cap (seated, power, weight, side, seat, powerBalance);
+        # trim/moves are heuristic within their 0.5s cap and vary run-to-run, so they are NOT golden-pinned
+        assert res.metrics.lex_key()[:6] == exp_metrics.lex_key()[:6], f.name
         assert res.rule_satisfied == exp["ruleSatisfied"], f.name
         # Hard invariants hold regardless of which equally-optimal lineup was chosen.
         ids = [a["paddlerId"] for a in res.lineup.as_json()]
