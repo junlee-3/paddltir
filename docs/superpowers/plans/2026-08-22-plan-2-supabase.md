@@ -400,6 +400,7 @@ select lives_ok($$ insert into paddlers (club_id, name, email, weight_kg, gender
 select lives_ok($$ insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'Sam S', 80, 'male') $$, 'coach inserts second paddler');
 select tests.logout();
 create temp table sam_row as select id from paddlers where name = 'Sam S';   -- as postgres: Sam cannot see this row before linking
+grant select on sam_row to authenticated;   -- the argument expression is evaluated as the caller's role
 
 -- claimable list works before joining
 select is((select count(*) from claimable_paddlers((select invite_code from clubs limit 1))), 2::bigint, 'claimable lists unlinked paddlers');
@@ -608,6 +609,7 @@ select lives_ok($$ insert into erg_tests (paddler_id, metres, source, recorded_b
 select lives_ok($$ update clubs set name = 'Club Uno' $$, 'coach renames club');
 select tests.logout();
 create temp table club_one as select id from clubs where name = 'Club Uno';   -- as postgres, for the cross-club insert below
+grant select on club_one to authenticated;  -- so the insert below fails on RLS with-check, not on temp-table privilege
 
 select tests.login_as('c2@test.dev'); select create_club('Club Two');
 select is((select count(*) from paddlers), 0::bigint, 'other club sees no paddlers');
