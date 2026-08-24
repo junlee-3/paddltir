@@ -1,0 +1,34 @@
+{
+  "name": "eval-small-hand",
+  "description": "Hand-computed ground truth. Arms: b1 -2, b2 -1, b3 0, b4 1, b5 2; drummer -3, sweep +3.",
+  "boat": { "benches": 5 },
+  "rule": null,
+  "paddlers": [
+    { "id": "p1", "name": "Ana",   "weightKg": 60, "ergM": 500, "side": "left",   "gender": "female", "seatPref": "stroke", "role": "paddler" },
+    { "id": "p2", "name": "Ben",   "weightKg": 80, "ergM": 600, "side": "right",  "gender": "male",   "seatPref": "engine", "role": "paddler" },
+    { "id": "p3", "name": "Cat",   "weightKg": 70, "ergM": 550, "side": "either", "gender": "female", "seatPref": "none",   "role": "paddler" },
+    { "id": "p4", "name": "Dan",   "weightKg": 90, "ergM": 450, "side": "left",   "gender": "male",   "seatPref": "sprint", "role": "paddler" },
+    { "id": "d1", "name": "Drum",  "weightKg": 50, "ergM": 0,   "side": "either", "gender": "female", "seatPref": "none",   "role": "drummer" },
+    { "id": "s1", "name": "Sweep", "weightKg": 75, "ergM": 0,   "side": "either", "gender": "male",   "seatPref": "none",   "role": "sweep" }
+  ],
+  "drummerId": "d1",
+  "sweepId": "s1",
+  "lineup": [
+    { "bench": 1, "side": "left",  "paddlerId": "p1" },
+    { "bench": 1, "side": "right", "paddlerId": "p2" },
+    { "bench": 4, "side": "right", "paddlerId": "p3" },
+    { "bench": 5, "side": "right", "paddlerId": "p4" }
+  ],
+  "current": [
+    { "bench": 1, "side": "left",  "paddlerId": "p2" },
+    { "bench": 1, "side": "right", "paddlerId": "p1" },
+    { "bench": 4, "side": "right", "paddlerId": "p3" }
+  ],
+  "expected": {
+    "metrics": {
+      "seated": 4, "totalPower": 2100,
+      "weightLeft": 60, "weightRight": 240, "powerLeft": 500, "powerRight": 1600,
+      "sideMismatches": 1, "seatMismatches": 1, "trimMoment": 45, "women": 2, "men": 2, "moves": 2
+    }
+  }
+}
