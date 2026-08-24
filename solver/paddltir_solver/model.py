@@ -1,9 +1,11 @@
 """Domain model shared with PaddltirCore (Swift). Keep field names/JSON keys identical to fixtures/README.md."""
 from __future__ import annotations
-from dataclasses import dataclass, field
+
+from collections.abc import Iterable
+from dataclasses import dataclass
 from enum import Enum
 from functools import total_ordering
-from typing import Iterable, Optional
+
 
 class Side(str, Enum):
     left = "left"; right = "right"
@@ -18,7 +20,7 @@ class Section(str, Enum):
 class SeatPref(str, Enum):
     stroke = "stroke"; pace = "pace"; engine = "engine"; sprint = "sprint"; none = "none"
     @property
-    def section(self) -> Optional[Section]:
+    def section(self) -> Section | None:
         return None if self is SeatPref.none else Section(self.value)
 class Role(str, Enum):
     paddler = "paddler"; drummer = "drummer"; sweep = "sweep"
@@ -53,7 +55,7 @@ class Boat:
             if bench in self.benches_in(s): return s
         return Section.engine
     @property
-    def all_seats(self) -> list["Seat"]:
+    def all_seats(self) -> list[Seat]:
         return [Seat(b, s) for b in range(1, self.benches + 1) for s in (Side.left, Side.right)]
 
 @dataclass(frozen=True)
@@ -61,7 +63,7 @@ class Boat:
 class Seat:
     bench: int
     side: Side
-    def __lt__(self, o: "Seat") -> bool:  # left < right within a bench
+    def __lt__(self, o: Seat) -> bool:  # left < right within a bench
         return (self.bench, self.side is Side.right) < (o.bench, o.side is Side.right)
 
 @dataclass(frozen=True)
@@ -69,7 +71,7 @@ class Paddler:
     id: str; name: str; weight_kg: float; erg_m: float
     side: SidePref; gender: Gender; seat_pref: SeatPref; role: Role
     @staticmethod
-    def from_json(j: dict) -> "Paddler":
+    def from_json(j: dict) -> Paddler:
         return Paddler(j["id"], j["name"], float(j["weightKg"]), float(j.get("ergM", 0)), SidePref(j["side"]),
                        Gender(j["gender"]), SeatPref(j.get("seatPref", "none")), Role(j.get("role", "paddler")))
     def to_json(self) -> dict:
@@ -80,7 +82,7 @@ class Roster:
     def __init__(self, paddlers: Iterable[Paddler]):
         self.by_id: dict[str, Paddler] = {p.id: p for p in paddlers}
     def __getitem__(self, pid: str) -> Paddler: return self.by_id[pid]
-    def get(self, pid: str) -> Optional[Paddler]: return self.by_id.get(pid)
+    def get(self, pid: str) -> Paddler | None: return self.by_id.get(pid)
     def __contains__(self, pid: str) -> bool: return pid in self.by_id
     @property
     def ids(self) -> list[str]: return sorted(self.by_id)
@@ -92,7 +94,7 @@ class SeatAssignment:
     @property
     def seat(self) -> Seat: return Seat(self.bench, self.side)
     @staticmethod
-    def from_json(j: dict) -> "SeatAssignment":
+    def from_json(j: dict) -> SeatAssignment:
         return SeatAssignment(int(j["bench"]), Side(j["side"]), j["paddlerId"], bool(j.get("locked", False)))
     def to_json(self) -> dict:
         d = {"bench": self.bench, "side": self.side.value, "paddlerId": self.paddler_id}
@@ -102,14 +104,14 @@ class SeatAssignment:
 @dataclass(frozen=True)
 class Lineup:
     boat: Boat
-    drummer_id: Optional[str] = None
-    sweep_id: Optional[str] = None
+    drummer_id: str | None = None
+    sweep_id: str | None = None
     assignments: tuple[SeatAssignment, ...] = ()
     def __post_init__(self):
         object.__setattr__(self, "assignments", tuple(sorted(self.assignments, key=lambda a: (a.bench, a.side is Side.right))))
-    def paddler_at(self, seat: Seat) -> Optional[str]:
+    def paddler_at(self, seat: Seat) -> str | None:
         return next((a.paddler_id for a in self.assignments if a.seat == seat), None)
-    def seat_of(self, pid: str) -> Optional[Seat]:
+    def seat_of(self, pid: str) -> Seat | None:
         return next((a.seat for a in self.assignments if a.paddler_id == pid), None)
     @property
     def seated_ids(self) -> set[str]: return {a.paddler_id for a in self.assignments}
@@ -117,13 +119,13 @@ class Lineup:
 
 @dataclass(frozen=True)
 class GenderRule:
-    min_women: Optional[int] = None; max_women: Optional[int] = None
-    min_men: Optional[int] = None; max_men: Optional[int] = None
+    min_women: int | None = None; max_women: int | None = None
+    min_men: int | None = None; max_men: int | None = None
     def is_satisfied(self, women: int, men: int) -> bool:
         return ((self.min_women is None or women >= self.min_women) and (self.max_women is None or women <= self.max_women)
                 and (self.min_men is None or men >= self.min_men) and (self.max_men is None or men <= self.max_men))
     @staticmethod
-    def from_json(j: Optional[dict]) -> Optional["GenderRule"]:
+    def from_json(j: dict | None) -> GenderRule | None:
         if j is None: return None
         return GenderRule(j.get("minWomen"), j.get("maxWomen"), j.get("minMen"), j.get("maxMen"))
     def to_json(self) -> dict:
@@ -134,11 +136,11 @@ class PlacementRequest:
     boat: Boat
     roster: Roster
     candidates: tuple[str, ...]
-    drummer_id: Optional[str] = None
-    sweep_id: Optional[str] = None
+    drummer_id: str | None = None
+    sweep_id: str | None = None
     locked: tuple[SeatAssignment, ...] = ()
-    rule: Optional[GenderRule] = None
-    current: Optional[Lineup] = None
+    rule: GenderRule | None = None
+    current: Lineup | None = None
     def canonical_json(self) -> dict:
         """Stable JSON used for cache hashing."""
         return {"boat": {"benches": self.boat.benches}, "rule": self.rule.to_json() if self.rule else None,
@@ -149,7 +151,7 @@ class PlacementRequest:
 @dataclass(frozen=True)
 class Metrics:
     seated: int; total_power: float; weight_left: float; weight_right: float; power_left: float; power_right: float
-    side_mismatches: int; seat_mismatches: int; trim_moment: float; women: int; men: int; moves: Optional[int] = None
+    side_mismatches: int; seat_mismatches: int; trim_moment: float; women: int; men: int; moves: int | None = None
     @property
     def weight_delta(self) -> float: return abs(self.weight_left - self.weight_right)
     @property
@@ -164,11 +166,11 @@ class Metrics:
         if self.moves is not None: d["moves"] = self.moves
         return d
     @staticmethod
-    def from_json(j: dict) -> "Metrics":
+    def from_json(j: dict) -> Metrics:
         return Metrics(int(j["seated"]), float(j["totalPower"]), float(j["weightLeft"]), float(j["weightRight"]), float(j["powerLeft"]),
                        float(j["powerRight"]), int(j["sideMismatches"]), int(j["seatMismatches"]), float(j["trimMoment"]),
                        int(j["women"]), int(j["men"]), j.get("moves"))
-    def approx_equal(self, o: "Metrics", tol: float = 1e-6) -> bool:
+    def approx_equal(self, o: Metrics, tol: float = 1e-6) -> bool:
         return (self.seated == o.seated and self.side_mismatches == o.side_mismatches and self.seat_mismatches == o.seat_mismatches
                 and self.women == o.women and self.men == o.men and self.moves == o.moves
                 and all(abs(a - b) <= tol for a, b in [(self.total_power, o.total_power), (self.weight_left, o.weight_left),

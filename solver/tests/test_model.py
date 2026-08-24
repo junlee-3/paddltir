@@ -1,6 +1,19 @@
-import json
-from paddltir_solver.model import (Boat, Section, Paddler, Roster, Seat, Side, SeatAssignment, Lineup,
-                                   GenderRule, Metrics, SidePref, Gender, SeatPref, Role)
+from paddltir_solver.model import (
+    Boat,
+    Gender,
+    GenderRule,
+    Lineup,
+    Metrics,
+    Paddler,
+    Role,
+    Seat,
+    SeatAssignment,
+    SeatPref,
+    Section,
+    Side,
+    SidePref,
+)
+
 
 def test_boat_geometry_and_sections():
     b = Boat(10)

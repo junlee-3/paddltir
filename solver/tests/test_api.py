@@ -1,7 +1,18 @@
 from fastapi.testclient import TestClient
+
 from paddltir_solver import app as appmod
 from paddltir_solver.db import HeatContext
-from paddltir_solver.model import Boat, PlacementRequest, Roster, Paddler, SidePref, Gender, SeatPref, Role
+from paddltir_solver.model import (
+    Boat,
+    Gender,
+    Paddler,
+    PlacementRequest,
+    Role,
+    Roster,
+    SeatPref,
+    SidePref,
+)
+
 
 class FakeConn:  # records cache puts; no DB
     def __init__(self): self.cache = {}

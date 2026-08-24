@@ -1,8 +1,22 @@
-import time
-from paddltir_solver.model import Boat, GenderRule, Lineup, Paddler, PlacementRequest, Roster, Seat, SeatAssignment, Side, STAGES
-from paddltir_solver.model import SidePref, Gender, SeatPref, Role
-from paddltir_solver.mip import solve, DEFAULT_CAPS
+from paddltir_solver.mip import DEFAULT_CAPS, solve
+from paddltir_solver.model import (
+    STAGES,
+    Boat,
+    Gender,
+    GenderRule,
+    Lineup,
+    Paddler,
+    PlacementRequest,
+    Role,
+    Roster,
+    Seat,
+    SeatAssignment,
+    SeatPref,
+    Side,
+    SidePref,
+)
 from paddltir_solver.scoring import evaluate
+
 
 def mk(i, w, e, side="either", g="male", pref="none", role="paddler"):
     return Paddler(i, i.upper(), w, e, SidePref(side), Gender(g), SeatPref(pref), Role(role))

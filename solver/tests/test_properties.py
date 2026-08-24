@@ -1,6 +1,18 @@
-from hypothesis import given, settings, strategies as st, HealthCheck
-from paddltir_solver.model import Boat, Gender, GenderRule, Paddler, PlacementRequest, Role, Roster, SeatPref, SidePref
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
 from paddltir_solver.mip import solve
+from paddltir_solver.model import (
+    Boat,
+    Gender,
+    GenderRule,
+    Paddler,
+    PlacementRequest,
+    Role,
+    Roster,
+    SeatPref,
+    SidePref,
+)
 
 paddler = st.builds(lambda i, w, e, s, g, p: Paddler(f"p{i:03d}", f"P{i}", float(w), float(e), SidePref(s), Gender(g), SeatPref(p), Role.paddler),
                     st.integers(0, 999), st.integers(50, 100), st.integers(400, 700),

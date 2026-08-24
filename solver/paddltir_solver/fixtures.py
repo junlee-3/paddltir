@@ -1,10 +1,22 @@
 """Golden fixture loader + CLI. `python -m paddltir_solver.fixtures update|check <dir>` writes/checks expected.mip."""
 from __future__ import annotations
-import json, sys
+
+import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-from .model import Boat, GenderRule, Lineup, Metrics, Paddler, PlacementRequest, Roster, SeatAssignment
+
+from .model import (
+    Boat,
+    GenderRule,
+    Lineup,
+    Metrics,
+    Paddler,
+    PlacementRequest,
+    Roster,
+    SeatAssignment,
+)
+
 
 @dataclass
 class Fixture:
@@ -15,7 +27,7 @@ class Fixture:
     @property
     def boat(self) -> Boat: return Boat(int(self.raw["boat"]["benches"]))
     @property
-    def rule(self) -> Optional[GenderRule]: return GenderRule.from_json(self.raw.get("rule"))
+    def rule(self) -> GenderRule | None: return GenderRule.from_json(self.raw.get("rule"))
     @property
     def roster(self) -> Roster: return Roster(Paddler.from_json(p) for p in self.raw["paddlers"])
     @property
@@ -28,7 +40,7 @@ class Fixture:
     def lineup_from(self, seats: list[dict]) -> Lineup:
         return Lineup(self.boat, self.drummer_id, self.sweep_id, tuple(SeatAssignment.from_json(s) for s in seats))
     def evaluation_lineup(self) -> Lineup: return self.lineup_from(self.raw.get("lineup") or [])
-    def current_lineup(self) -> Optional[Lineup]:
+    def current_lineup(self) -> Lineup | None:
         return self.lineup_from(self.raw["current"]) if self.raw.get("current") is not None else None
     def expected_metrics(self) -> Metrics: return Metrics.from_json(self.raw["expected"]["metrics"])
     def placement_request(self) -> PlacementRequest:

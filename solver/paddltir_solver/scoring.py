@@ -1,4 +1,5 @@
-from .model import Lineup, Roster, Metrics, Side
+from .model import Lineup, Metrics, Roster, Side
+
 
 def evaluate(lineup: Lineup, roster: Roster, reference: Lineup | None = None) -> Metrics:
     """Identical semantics to PaddltirCore.Scoring.evaluate. Unknown ids ignored; drummer/sweep only affect trim."""

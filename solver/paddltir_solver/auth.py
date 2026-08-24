@@ -1,5 +1,6 @@
 import httpx
 
+
 class AuthError(Exception):
     pass
 

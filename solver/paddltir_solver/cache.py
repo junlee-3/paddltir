@@ -1,7 +1,11 @@
-import hashlib, json
+import hashlib
+import json
+
 import psycopg
+
 from . import SOLVER_VERSION
 from .model import PlacementRequest
+
 
 def input_hash(req: PlacementRequest) -> str:
     payload = json.dumps({"v": SOLVER_VERSION, "req": req.canonical_json()}, sort_keys=True, separators=(",", ":"))

@@ -1,12 +1,16 @@
 from __future__ import annotations
+
 import os
 from functools import lru_cache
 from typing import Annotated
+
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
+
 from . import SOLVER_VERSION, auth, cache, db
 from .mip import solve
 from .model import SeatAssignment, Side
+
 
 class Settings(BaseModel):
     supabase_url: str = ""

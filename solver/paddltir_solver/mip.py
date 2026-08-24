@@ -1,10 +1,20 @@
 """Lexicographic MIP with HiGHS. Stages: seated↑, power↑, weight↓, side↓, seat↓, powerBalance↓, trim↓, moves↓.
 Each stage locks its optimum (± eps) as a constraint before the next objective is solved."""
 from __future__ import annotations
+
 import time
 from dataclasses import dataclass
+
 import highspy
-from .model import (Boat, GenderRule, Lineup, Metrics, PlacementRequest, Roster, Seat, SeatAssignment, Side, STAGES)
+
+from .model import (
+    GenderRule,
+    Lineup,
+    Metrics,
+    PlacementRequest,
+    SeatAssignment,
+    Side,
+)
 from .scoring import evaluate
 
 DEFAULT_CAPS: dict[str, float] = {"seated": 1.0, "power": 1.0, "weight": 1.0, "side": 1.0, "seat": 1.0, "powerBalance": 1.0, "trim": 0.5, "moves": 0.5}
@@ -108,7 +118,7 @@ class _Model:
             if last_sol is not None:                                    # warm start from previous stage
                 try:
                     h.setSolution(last_sol)
-                except Exception:                                       # model shape changed → warm start is optional
+                except Exception:                                       # noqa: BLE001 — model shape changed → warm start is optional
                     self.warm_start_ok = False
             if sense == "max": h.maximize(expr)
             else: h.minimize(expr)

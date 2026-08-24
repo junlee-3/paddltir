@@ -1,6 +1,8 @@
 import pytest
+
 from paddltir_solver import fixtures as fx
 from paddltir_solver.scoring import evaluate
+
 
 def test_evaluate_fixtures_match_exactly(fixtures_dir):
     items = fx.load_all(fixtures_dir / "evaluate")

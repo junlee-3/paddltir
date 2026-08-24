@@ -1,8 +1,22 @@
-import httpx, pytest
-from paddltir_solver.auth import verify_user, AuthError
+import httpx
+import pytest
+
+from paddltir_solver.auth import AuthError, verify_user
 from paddltir_solver.cache import input_hash
 from paddltir_solver.db import HEAT_CONTEXT_SQL, context_from_row
-from paddltir_solver.model import Boat, PlacementRequest, Roster, Paddler, SidePref, Gender, SeatPref, Role, Seat, Side
+from paddltir_solver.model import (
+    Boat,
+    Gender,
+    Paddler,
+    PlacementRequest,
+    Role,
+    Roster,
+    Seat,
+    SeatPref,
+    Side,
+    SidePref,
+)
+
 
 def test_verify_user_ok_and_bad():
     def handler(request: httpx.Request):

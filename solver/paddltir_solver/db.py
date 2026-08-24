@@ -1,7 +1,18 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 import psycopg
-from .model import Boat, GenderRule, Lineup, Paddler, PlacementRequest, Roster, SeatAssignment, Side
+
+from .model import (
+    Boat,
+    GenderRule,
+    Lineup,
+    Paddler,
+    PlacementRequest,
+    Roster,
+    SeatAssignment,
+)
 
 HEAT_CONTEXT_SQL = """
 with h as (select id, race_id, drummer_id, sweep_id from heats h where h.id = %(heat_id)s),

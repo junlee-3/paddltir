@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8", "hypothesis>=6.100", "pytest-timeout>=2.3"]
+dev = ["pytest>=8", "hypothesis>=6.100", "pytest-timeout>=2.3", "ruff>=0.6", "uvicorn>=0.30"]
 
 [tool.vercel]
 entrypoint = "main:app"
@@ -20,6 +20,16 @@ entrypoint = "main:app"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 timeout = 120
+
+[tool.ruff.lint.flake8-bugbear]
+# fastapi.Depends() as a call in an argument default is the documented FastAPI DI
+# idiom, not the mutable-default-argument bug B008 exists to catch.
+extend-immutable-calls = ["fastapi.Depends"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixture factories default to frozen value objects (GenderRule(...), Boat(...));
+# same non-bug shape as the FastAPI Depends() case above, but ruff doesn't know that.
+"tests/*" = ["B008"]
 
 [build-system]
 requires = ["hatchling"]
