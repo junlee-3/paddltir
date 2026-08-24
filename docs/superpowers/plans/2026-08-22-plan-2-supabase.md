@@ -629,7 +629,7 @@ rollback;
 ```sql
 -- supabase/tests/004_rls_paddler.sql
 begin;
-select plan(16);
+select plan(17);
 select tests.create_user('coach@test.dev','Coach'); select tests.create_user('p1@test.dev','P1'); select tests.create_user('p2@test.dev','P2');
 select tests.login_as('coach@test.dev'); select create_club('Club');
 insert into paddlers (club_id, name, email, weight_kg, gender) values (auth_club_id(), 'P One', 'p1@test.dev', 61.5, 'female');
@@ -659,6 +659,8 @@ select lives_ok($$ insert into erg_tests (paddler_id, metres, source, recorded_b
 select throws_ok($$ insert into erg_tests (paddler_id, metres, source) values (my_paddler_id(), 520, 'coach') $$, '42501', null, 'paddler cannot claim coach source');
 update paddlers set weight_kg = 50 where id = my_paddler_id();   -- no UPDATE policy for paddlers ⇒ affects 0 rows
 select is((select weight_kg from paddlers where id = my_paddler_id()), 61.5::numeric, 'paddler cannot edit own weight');
+update paddlers set profile_id = auth.uid() where id in (select id from paddlers_public where name = 'P Two');  -- claim bypass ⇒ 0 rows
+select is((select profile_id from paddlers_public where name = 'P Two'), null, 'paddler cannot claim rows directly');
 select throws_ok($$ insert into seats (heat_id, bench, side, paddler_id) select h.id, 2, 'left', my_paddler_id() from heats h $$, '42501', null, 'paddler cannot edit lineup');
 select throws_ok($$ update profiles set role = 'coach' where id = auth.uid() $$, '42501', null, 'paddler cannot self-promote');
 select is((select count(*) from availability), 1::bigint, 'paddler sees only own availability rows');
