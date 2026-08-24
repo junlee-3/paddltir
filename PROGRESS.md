@@ -4,7 +4,18 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Phase 1 — ready to execute Plans 1–3** (core, supabase, solver). Spec approved 2026-08-22.
+**Phase 1 COMPLETE — all three backend/algorithm plans merged to main (2c34fac).**
+Milestone on main: PaddltirCore (Swift, 56 tests) · solver (Python, 25 tests) · supabase (98 pgTAP)
+· cross-language golden fixtures · vercel.json. Every task subagent-built + reviewed; security-critical
+SQL got 3 opus reviews + a final RLS-hardening pass. No open Critical/Important findings.
+
+NEXT (phase boundary — awaiting Jun's steer, see checkpoint): (a) GO-LIVE = create hosted Supabase
+project (Task 7, ap-southeast-2) + Vercel deploy + Plan 6 integration (end-to-end SQL exec against
+merged schema, the deferred solver hardening: UUID-validate heatId, httpx reuse, auth-before-conn).
+(b) APPS = visual direction (frontend-design + ui-ux-pro-max + imagegen concepts for Jun to review),
+then Plan 4 (SwiftUI coach app) + Plan 5 (paddler PWA). Both were written to start AFTER visual direction.
+
+## (was) Phase 1 — Plans 1–3 (core, supabase, solver). Spec approved 2026-08-22.
 Plans live in `docs/superpowers/plans/` — start from `2026-08-22-roadmap.md`.
 Execution: subagent-driven, parallel (Jun chose 2026-08-23). One git worktree + branch per plan:
 `.worktrees/plan-1-core` (branch plan-1-core), `.worktrees/plan-2-supabase`, `.worktrees/plan-3-solver`.
