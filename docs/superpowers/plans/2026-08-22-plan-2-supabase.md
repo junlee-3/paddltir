@@ -401,6 +401,8 @@ select lives_ok($$ insert into paddlers (club_id, name, weight_kg, gender) value
 select tests.logout();
 create temp table sam_row as select id from paddlers where name = 'Sam S';   -- as postgres: Sam cannot see this row before linking
 grant select on sam_row to authenticated;   -- the argument expression is evaluated as the caller's role
+create temp table invite as select invite_code as code from clubs;   -- codes are delivered out of band in the product;
+grant select on invite to authenticated;                             -- clubs are invisible until you belong to one (RLS)
 
 -- claimable list works before joining
 select is((select count(*) from claimable_paddlers((select invite_code from clubs limit 1))), 2::bigint, 'claimable lists unlinked paddlers');
@@ -408,13 +410,13 @@ select is((select count(*) from claimable_paddlers((select invite_code from club
 -- lily joins: linked by email automatically (linkage asserted as postgres — authenticated
 -- must NOT be able to read auth.users, so the assertion runs after logout)
 select tests.login_as('lily@test.dev');
-select lives_ok($$ select join_club((select invite_code from clubs limit 1)) $$, 'lily joins with code');
+select lives_ok($$ select join_club((select code from invite)) $$, 'lily joins with code');
 select tests.logout();
 select is((select profile_id from paddlers where name='Lily L'), (select id from auth.users where email='lily@test.dev'), 'lily linked by email');
 
 -- sam joins claiming a name
 select tests.login_as('sam@test.dev');
-select lives_ok($$ select join_club((select invite_code from clubs limit 1), (select id from sam_row)) $$, 'sam claims his row');
+select lives_ok($$ select join_club((select code from invite), (select id from sam_row)) $$, 'sam claims his row');
 select throws_ok($$ select join_club('NOPE1234') $$, 'P0001', 'invalid invite code', 'bad code rejected');
 select tests.logout();
 select is((select profile_id from paddlers where name='Sam S'), (select id from auth.users where email='sam@test.dev'), 'sam linked to his row');
@@ -641,8 +643,10 @@ insert into heats (race_id, name) select id, 'Heat 1' from races;
 insert into seats (heat_id, bench, side, paddler_id) select h.id, 1, 'left', p.id from heats h, paddlers p where p.name='P Two';
 insert into erg_tests (paddler_id, metres, source) select id, 600, 'coach' from paddlers where name='P Two';
 select tests.logout();
+create temp table invite as select invite_code as code from clubs;
+grant select on invite to authenticated;
 
-select tests.login_as('p1@test.dev'); select join_club((select invite_code from clubs));
+select tests.login_as('p1@test.dev'); select join_club((select code from invite));
 -- reads
 select is((select count(*) from paddlers), 1::bigint, 'paddler reads only own base row');
 select is((select name from paddlers), 'P One', 'and it is theirs');
