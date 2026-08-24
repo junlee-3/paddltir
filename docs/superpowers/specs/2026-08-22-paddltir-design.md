@@ -217,8 +217,10 @@ address and are not claimable by name. `create_club(name)` RPC makes the caller 
    minimising the lexicographic score (incl. trim, with drummer/sweep fixed
    term).
 3. **Improve** — 2-opt local search over seat↔seat swaps and seat↔reserve
-   replacements; accept strictly improving; loop until no improvement.
-   Deterministic (stable ordering, first-improvement). Target < 1 ms for 20
+   replacements; each iteration applies the single *best*-improving move
+   (best-improvement steepest descent, not first-improvement — both
+   deterministic; the golden fixtures pin the chosen variant); loop until no
+   improvement. Deterministic (stable ordering). Measured ≈ 3 ms release for 20
    seats.
 API: `evaluate(lineup) → Metrics`, `autoFill(...)`, `suggestSwaps(top:)`,
 `replacementPlans(for:)`, `validate(lineup) → [Violation]`.
