@@ -1,0 +1,15 @@
+{
+  "name": "eval-empty",
+  "description": "No one seated; drummer + sweep still produce trim (52*-5.5 + 81*5.5 = 159.5).",
+  "boat": { "benches": 10 },
+  "rule": null,
+  "paddlers": [
+    { "id": "drum",  "name": "Drum",  "weightKg": 52, "ergM": 0, "side": "either", "gender": "female", "seatPref": "none", "role": "drummer" },
+    { "id": "sweep", "name": "Sweep", "weightKg": 81, "ergM": 0, "side": "either", "gender": "male",   "seatPref": "none", "role": "sweep" }
+  ],
+  "drummerId": "drum",
+  "sweepId": "sweep",
+  "lineup": [],
+  "expected": { "metrics": { "seated": 0, "totalPower": 0, "weightLeft": 0, "weightRight": 0, "powerLeft": 0, "powerRight": 0,
+    "sideMismatches": 0, "seatMismatches": 0, "trimMoment": 159.5, "women": 0, "men": 0 } }
+}
