@@ -1,0 +1,15 @@
+begin;
+select plan(5);
+select tests.create_user('coach@test.dev','Coach');
+select tests.login_as('coach@test.dev'); select create_club('Club');
+insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'A', 70, 'male');
+select tests.logout();
+select tests.login_anon();
+select throws_ok($$ select count(*) from clubs $$, '42501', null, 'anon has no privilege on clubs');
+select throws_ok($$ select count(*) from paddlers $$, '42501', null, 'anon has no privilege on paddlers');
+select throws_ok($$ select * from paddlers_public $$, '42501', null, 'anon cannot use the public view');
+select throws_ok($$ insert into clubs (name) values ('Hack') $$, '42501', null, 'anon cannot insert clubs');
+select throws_ok($$ select create_club('Hack') $$, '42501', null, 'anon cannot call create_club');
+select tests.logout();
+select * from finish();
+rollback;

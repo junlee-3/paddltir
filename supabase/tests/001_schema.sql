@@ -1,0 +1,16 @@
+begin;
+select plan(30);
+select has_type('user_role'); select has_type('side_pref'); select has_type('gender'); select has_type('seat_pref');
+select has_type('boat_role'); select has_type('boat_side'); select has_type('boat_size'); select has_type('crew_category');
+select has_type('session_kind'); select has_type('availability_status'); select has_type('erg_source');
+select has_table('clubs'); select has_table('profiles'); select has_table('paddlers'); select has_table('erg_tests');
+select has_table('crews'); select has_table('crew_members'); select has_table('sessions'); select has_table('availability');
+select has_table('races'); select has_table('heats'); select has_table('seats'); select has_table('heat_reserves');
+select has_table('category_rules'); select has_table('optimize_cache');
+select col_is_pk('seats', array['heat_id','bench','side']);
+select col_is_unique('paddlers', 'profile_id');
+select has_column('paddlers', 'archived_at');
+select has_column('races', 'boat_size');
+select has_function('set_updated_at');
+select * from finish();
+rollback;
