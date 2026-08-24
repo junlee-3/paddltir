@@ -2,6 +2,9 @@ import Foundation
 
 public enum Scoring {
     /// Computes all metrics for a lineup. Unknown paddler ids are ignored; drummer/sweep only affect trim.
+    /// Precondition: the lineup is structurally valid (see `Validator`). Metrics are undefined for an invalid
+    /// lineup — in particular, if a paddler is both benched and named as the lineup's drummer or sweep, their
+    /// weight is counted twice in `trimMoment`. Callers guard with `Validator.violations(in:roster:rule:)`.
     public static func evaluate(_ lineup: Lineup, roster: Roster, reference: Lineup? = nil) -> Metrics {
         let boat = lineup.boat
         var seated = 0, side = 0, seat = 0, women = 0, men = 0

@@ -6,7 +6,12 @@
 ## Current phase
 **Phase 1 — ready to execute Plans 1–3** (core, supabase, solver). Spec approved 2026-08-22.
 Plans live in `docs/superpowers/plans/` — start from `2026-08-22-roadmap.md`.
-Awaiting Jun's choice: subagent-driven vs inline execution.
+Execution: subagent-driven, parallel (Jun chose 2026-08-23). One git worktree + branch per plan:
+`.worktrees/plan-1-core` (branch plan-1-core), `.worktrees/plan-2-supabase`, `.worktrees/plan-3-solver`.
+Each worktree has an SDD ledger at `<worktree>/.superpowers/sdd/<plan>/progress.md` (git-ignored) —
+after compaction: read those ledgers + `git log` on each branch to find the next task. Branches are pushed
+as tasks complete; each plan merges to main after its final review. Plan 3 Task 2+ waits for Plan 1's
+fixtures to land on main (then `git merge main` into plan-3-solver).
 
 ## Hard rules (from the brief)
 - Old project `/Users/junlee/Documents/CGS/IB/IA/LEEJun-CSIA/Product/crewCoach` is **READ-ONLY**. Never write/modify anything there.
@@ -46,9 +51,9 @@ Awaiting Jun's choice: subagent-driven vs inline execution.
 - [x] Brainstorm UX / screen architecture — all 6 sections approved
 - [x] Spec written and approved (docs/superpowers/specs/2026-08-22-paddltir-design.md)
 - [x] Roadmap + Plans 1–3 written and self-reviewed (docs/superpowers/plans/)
-- [ ] Execute Plan 1 (PaddltirCore)
-- [ ] Execute Plan 2 (Supabase) — needs OrbStack installed
-- [ ] Execute Plan 3 (Solver)
+- [~] Plan 1 (PaddltirCore): ALL 12 tasks complete+reviewed on branch plan-1-core; 56/56 tests, 0 warnings, bench 2.97ms; final whole-branch review in flight → then merge to main
+- [~] Plan 2 (Supabase): tasks 1–3 complete (incl. 4-round security hardening); task 4 (RLS) in fix round 2 (availability relocation + erg hardening); OrbStack installed, local stack live
+- [~] Plan 3 (Solver): tasks 1–2 complete (Python model + scoring parity EXACT vs Swift goldens incl. moves); task 2 review in flight; task 3 (MIP) next
 
 ## Next
 - [x] Write design spec → docs/superpowers/specs/2026-08-22-paddltir-design.md

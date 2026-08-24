@@ -400,23 +400,27 @@ select lives_ok($$ insert into paddlers (club_id, name, email, weight_kg, gender
 select lives_ok($$ insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'Sam S', 80, 'male') $$, 'coach inserts second paddler');
 select tests.logout();
 create temp table sam_row as select id from paddlers where name = 'Sam S';   -- as postgres: Sam cannot see this row before linking
+grant select on sam_row to authenticated;   -- the argument expression is evaluated as the caller's role
+create temp table invite as select invite_code as code from clubs;   -- codes are delivered out of band in the product;
+grant select on invite to authenticated;                             -- clubs are invisible until you belong to one (RLS)
 
 -- claimable list works before joining
 select is((select count(*) from claimable_paddlers((select invite_code from clubs limit 1))), 2::bigint, 'claimable lists unlinked paddlers');
 
--- lily joins: linked by email automatically
+-- lily joins: linked by email automatically (linkage asserted as postgres — authenticated
+-- must NOT be able to read auth.users, so the assertion runs after logout)
 select tests.login_as('lily@test.dev');
-select lives_ok($$ select join_club((select invite_code from clubs limit 1)) $$, 'lily joins with code');
-select is((select profile_id from paddlers where name='Lily L'), (select id from auth.users where email='lily@test.dev'), 'lily linked by email');
+select lives_ok($$ select join_club((select code from invite)) $$, 'lily joins with code');
 select tests.logout();
+select is((select profile_id from paddlers where name='Lily L'), (select id from auth.users where email='lily@test.dev'), 'lily linked by email');
 
 -- sam joins claiming a name
 select tests.login_as('sam@test.dev');
-select lives_ok($$ select join_club((select invite_code from clubs limit 1), (select id from sam_row)) $$, 'sam claims his row');
-select is((select profile_id from paddlers where name='Sam S'), (select id from auth.users where email='sam@test.dev'), 'sam linked to his row');
-select is((select role from profiles where display_name='Sam'), 'paddler', 'joiner is paddler');
+select lives_ok($$ select join_club((select code from invite), (select id from sam_row)) $$, 'sam claims his row');
 select throws_ok($$ select join_club('NOPE1234') $$, 'P0001', 'invalid invite code', 'bad code rejected');
 select tests.logout();
+select is((select profile_id from paddlers where name='Sam S'), (select id from auth.users where email='sam@test.dev'), 'sam linked to his row');
+select is((select role from profiles where display_name='Sam'), 'paddler', 'joiner is paddler');
 
 select * from finish();
 rollback;
@@ -560,6 +564,14 @@ language sql stable security definer set search_path = public as $$
   group by a.status
 $$;
 
+-- table access for API roles: privileges are broad here; ROW access is constrained by
+-- RLS in the next migration. anon gets nothing (and is revoked again in 0003).
+-- Empirically required: tables created by the migration role carry no ACL for
+-- authenticated, so RLS policies alone would still yield "permission denied".
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on all tables in schema public to authenticated, service_role;
+alter default privileges in schema public grant select, insert, update, delete on tables to authenticated, service_role;
+
 -- lock down execution
 revoke execute on all functions in schema public from public, anon;
 grant execute on function auth_club_id(), is_coach(), my_paddler_id(), crew_club(uuid), session_club(uuid), race_club(uuid), heat_club(uuid) to authenticated;
@@ -567,6 +579,7 @@ grant execute on function create_club(text), join_club(text, uuid), claimable_pa
 ```
 
 - [ ] **Step 5: Apply and test** — `supabase db reset && supabase test db` → 001 and 002 ok. If `create_club` is blocked by the profile trigger, check the GUC name matches exactly in both places.
+- [ ] **Step 5b: Security amendments (added 2026-08-24 after security review)** — apply every change in the amendments spec (CSPRNG invite codes; email linking only after verification via a confirmation trigger; NULL-safe profile guard; claim path honours email earmarking; claimable excludes earmarked rows; GUC cleared before returns; revoke profiles INSERT/DELETE + all TRUNCATE from user roles; service_role EXECUTE restored; 002 grows to plan(20) with guard coverage). Canonical text: the executed version lives in git on branch plan-2-supabase (commit "fix(db): harden profile guard, email-verified linking, claim rules, grants"); rationale in the SDD ledger.
 - [ ] **Step 6: Commit** — `git add supabase && git commit -m "feat(db): helpers, profile triggers, club RPCs, local test helpers"`
 
 ---
@@ -582,7 +595,7 @@ grant execute on function create_club(text), join_club(text, uuid), claimable_pa
 ```sql
 -- supabase/tests/003_rls_coach.sql
 begin;
-select plan(12);
+select plan(13);
 select tests.create_user('c1@test.dev','C1'); select tests.create_user('c2@test.dev','C2');
 select tests.login_as('c1@test.dev'); select create_club('Club One');
 insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'A', 70, 'male');
@@ -599,10 +612,12 @@ select lives_ok($$ insert into erg_tests (paddler_id, metres, source, recorded_b
 select lives_ok($$ update clubs set name = 'Club Uno' $$, 'coach renames club');
 select tests.logout();
 create temp table club_one as select id from clubs where name = 'Club Uno';   -- as postgres, for the cross-club insert below
+grant select on club_one to authenticated;  -- so the insert below fails on RLS with-check, not on temp-table privilege
 
 select tests.login_as('c2@test.dev'); select create_club('Club Two');
 select is((select count(*) from paddlers), 0::bigint, 'other club sees no paddlers');
 select is((select count(*) from seats), 0::bigint, 'other club sees no seats');
+select is((select count(*) from pg_tables where schemaname = 'public' and rowsecurity = false), 0::bigint, 'every public table has RLS enabled');
 select is((select count(*) from sessions), 0::bigint, 'other club sees no sessions');
 select is((select count(*) from clubs), 1::bigint, 'sees only own club');
 select throws_ok($$ insert into paddlers (club_id, name, weight_kg, gender) select id, 'X', 70, 'male' from club_one $$, '42501', null, 'cannot insert into other club');
@@ -616,7 +631,7 @@ rollback;
 ```sql
 -- supabase/tests/004_rls_paddler.sql
 begin;
-select plan(16);
+select plan(18);
 select tests.create_user('coach@test.dev','Coach'); select tests.create_user('p1@test.dev','P1'); select tests.create_user('p2@test.dev','P2');
 select tests.login_as('coach@test.dev'); select create_club('Club');
 insert into paddlers (club_id, name, email, weight_kg, gender) values (auth_club_id(), 'P One', 'p1@test.dev', 61.5, 'female');
@@ -628,8 +643,10 @@ insert into heats (race_id, name) select id, 'Heat 1' from races;
 insert into seats (heat_id, bench, side, paddler_id) select h.id, 1, 'left', p.id from heats h, paddlers p where p.name='P Two';
 insert into erg_tests (paddler_id, metres, source) select id, 600, 'coach' from paddlers where name='P Two';
 select tests.logout();
+create temp table invite as select invite_code as code from clubs;
+grant select on invite to authenticated;
 
-select tests.login_as('p1@test.dev'); select join_club((select invite_code from clubs));
+select tests.login_as('p1@test.dev'); select join_club((select code from invite));
 -- reads
 select is((select count(*) from paddlers), 1::bigint, 'paddler reads only own base row');
 select is((select name from paddlers), 'P One', 'and it is theirs');
@@ -646,6 +663,9 @@ select lives_ok($$ insert into erg_tests (paddler_id, metres, source, recorded_b
 select throws_ok($$ insert into erg_tests (paddler_id, metres, source) values (my_paddler_id(), 520, 'coach') $$, '42501', null, 'paddler cannot claim coach source');
 update paddlers set weight_kg = 50 where id = my_paddler_id();   -- no UPDATE policy for paddlers ⇒ affects 0 rows
 select is((select weight_kg from paddlers where id = my_paddler_id()), 61.5::numeric, 'paddler cannot edit own weight');
+update paddlers set profile_id = auth.uid() where id in (select id from paddlers_public where name = 'P Two');  -- claim bypass ⇒ 0 rows
+select is((select profile_id from paddlers_public where name = 'P Two'), null, 'paddler cannot claim rows directly');
+select throws_ok($$ update availability set session_id = gen_random_uuid() where paddler_id = my_paddler_id() $$, '42501', null, 'cannot move availability to another club''s session');
 select throws_ok($$ insert into seats (heat_id, bench, side, paddler_id) select h.id, 2, 'left', my_paddler_id() from heats h $$, '42501', null, 'paddler cannot edit lineup');
 select throws_ok($$ update profiles set role = 'coach' where id = auth.uid() $$, '42501', null, 'paddler cannot self-promote');
 select is((select count(*) from availability), 1::bigint, 'paddler sees only own availability rows');
@@ -697,7 +717,7 @@ alter table optimize_cache enable row level security;
 
 -- clubs
 create policy clubs_select on clubs for select to authenticated using (id = auth_club_id());
-create policy clubs_update on clubs for update to authenticated using (id = auth_club_id() and is_coach()) with check (id = auth_club_id());
+create policy clubs_update on clubs for update to authenticated using (id = auth_club_id() and is_coach()) with check (id = auth_club_id() and is_coach());
 
 -- profiles
 create policy profiles_select on profiles for select to authenticated using (id = auth.uid() or (club_id is not null and club_id = auth_club_id()));
@@ -712,12 +732,18 @@ create policy paddlers_insert on paddlers for insert to authenticated with check
 create policy paddlers_update on paddlers for update to authenticated using (club_id = auth_club_id() and is_coach()) with check (club_id = auth_club_id() and is_coach());
 
 -- erg_tests
-create policy erg_select_coach on erg_tests for select to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
+-- helper keeps policies off RLS-protected subqueries (recursion-proof, like the other *_club helpers)
+create or replace function paddler_club(p_paddler uuid) returns uuid
+language sql stable security definer set search_path = public as $$ select club_id from paddlers where id = p_paddler $$;
+revoke execute on function paddler_club(uuid) from public, anon;   -- created after 0002's blanket revoke; lock it down here
+grant execute on function paddler_club(uuid) to authenticated, service_role;
+
+create policy erg_select_coach on erg_tests for select to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
 create policy erg_select_self on erg_tests for select to authenticated using (paddler_id = my_paddler_id());
-create policy erg_insert_coach on erg_tests for insert to authenticated with check (is_coach() and source = 'coach' and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
-create policy erg_insert_self on erg_tests for insert to authenticated with check (paddler_id = my_paddler_id() and source = 'self');
-create policy erg_update_coach on erg_tests for update to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
-create policy erg_delete_coach on erg_tests for delete to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
+create policy erg_insert_coach on erg_tests for insert to authenticated with check (is_coach() and source = 'coach' and paddler_club(paddler_id) = auth_club_id());
+create policy erg_insert_self on erg_tests for insert to authenticated with check (paddler_id = my_paddler_id() and source = 'self' and recorded_by = auth.uid());
+create policy erg_update_coach on erg_tests for update to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
+create policy erg_delete_coach on erg_tests for delete to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
 
 -- club-scoped tables readable by everyone in the club, writable by coaches
 create policy crews_select on crews for select to authenticated using (club_id = auth_club_id());
@@ -749,12 +775,15 @@ create policy avail_select_coach on availability for select to authenticated usi
 create policy avail_select_self on availability for select to authenticated using (paddler_id = my_paddler_id());
 create policy avail_write_coach on availability for all to authenticated using (is_coach() and session_club(session_id) = auth_club_id()) with check (is_coach() and session_club(session_id) = auth_club_id());
 create policy avail_insert_self on availability for insert to authenticated with check (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id());
-create policy avail_update_self on availability for update to authenticated using (paddler_id = my_paddler_id()) with check (paddler_id = my_paddler_id());
+create policy avail_update_self on availability for update to authenticated
+  using (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id())
+  with check (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id());
 
 -- optimize_cache: service role only (no policies) — also revoke table privileges
 revoke all on optimize_cache from anon, authenticated;
--- anon gets nothing anywhere
+-- anon gets nothing anywhere — now and for future tables (the platform default ACL grants anon TRUNCATE)
 revoke all on all tables in schema public from anon;
+alter default privileges in schema public revoke all on tables from anon;
 ```
 
 - [ ] **Step 4: Run** — `supabase db reset && supabase test db` → 003 ok; 004/005 still fail only on `paddlers_public` (next task).
