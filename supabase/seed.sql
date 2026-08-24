@@ -1,4 +1,5 @@
 -- supabase/seed.sql  (LOCAL ONLY — never pushed to hosted)
+-- NOTE: tests.create_user is anon-callable by design; this file is never pushed to hosted.
 -- ---------- test helpers ----------
 create schema if not exists tests;
 grant usage on schema tests to anon, authenticated;   -- so tests.logout() is callable after login_as()

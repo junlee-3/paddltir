@@ -1,5 +1,5 @@
 begin;
-select plan(15);
+select plan(20);
 
 select tests.create_user('coach@test.dev', 'Coach');
 select tests.create_user('lily@test.dev', 'Lily');
@@ -24,7 +24,7 @@ create temp table sam_row as select id from paddlers where name = 'Sam S';   -- 
 grant select on sam_row to authenticated;   -- the argument expression is evaluated as the caller's role
 
 -- claimable list works before joining
-select is((select count(*) from claimable_paddlers((select invite_code from clubs limit 1))), 2::bigint, 'claimable lists unlinked paddlers');
+select is((select count(*) from claimable_paddlers((select invite_code from clubs limit 1))), 1::bigint, 'claimable lists unlinked paddlers without earmarked email');
 
 -- lily joins: linked by email automatically (linkage asserted as postgres — authenticated
 -- must NOT be able to read auth.users, so the assertion runs after logout)
@@ -37,9 +37,18 @@ select is((select profile_id from paddlers where name='Lily L'), (select id from
 select tests.login_as('sam@test.dev');
 select lives_ok($$ select join_club((select invite_code from clubs limit 1), (select id from sam_row)) $$, 'sam claims his row');
 select throws_ok($$ select join_club('NOPE1234') $$, 'P0001', 'invalid invite code', 'bad code rejected');
+select throws_ok($$ update profiles set role = 'head_coach' where id = auth.uid() $$, '42501', null, 'paddler cannot self-promote');
+select throws_ok($$ update profiles set club_id = null where id = auth.uid() $$, '42501', null, 'club_id is RPC-managed');
+select throws_ok($$ delete from profiles where id = auth.uid() $$, '42501', null, 'users cannot delete profiles');
+select throws_ok($$ insert into profiles (id, display_name) values (gen_random_uuid(), 'X') $$, '42501', null, 'users cannot insert profiles');
 select tests.logout();
 select is((select profile_id from paddlers where name='Sam S'), (select id from auth.users where email='sam@test.dev'), 'sam linked to his row');
 select is((select role from profiles where display_name='Sam'), 'paddler', 'joiner is paddler');
+
+-- positive guard path: a coach may change another member's role
+select tests.login_as('coach@test.dev');
+select lives_ok($$ update profiles set role = 'coach' where display_name = 'Sam' $$, 'coach can promote another member');
+select tests.logout();
 
 select * from finish();
 rollback;
