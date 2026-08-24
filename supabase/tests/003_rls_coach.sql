@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(18);
 select tests.create_user('c1@test.dev','C1'); select tests.create_user('c2@test.dev','C2');
 select tests.login_as('c1@test.dev'); select create_club('Club One');
 insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'A', 70, 'male');
@@ -27,6 +27,17 @@ select is((select count(*) from clubs), 1::bigint, 'sees only own club');
 select throws_ok($$ insert into paddlers (club_id, name, weight_kg, gender) select id, 'X', 70, 'male' from club_one $$, '42501', null, 'cannot insert into other club');
 select throws_ok($$ select count(*) from optimize_cache $$, '42501', null, 'cache not readable by users');
 select throws_ok($$ insert into optimize_cache (input_hash, result) values ('x', '{}') $$, '42501', null, 'cache not writable by users');
+insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'B', 60, 'female');   -- club two's paddler, referenced cross-club below
+select tests.logout();
+create temp table club_two_paddler as select id from paddlers where name = 'B';   -- as postgres, for the cross-club write attempts below
+grant select on club_two_paddler to authenticated;  -- so the writes below fail on RLS with-check, not on temp-table privilege
+
+select tests.login_as('c1@test.dev');
+select throws_ok($$ insert into availability (session_id, paddler_id, status) select s.id, p.id, 'in' from sessions s, club_two_paddler p $$, '42501', null, 'coach cannot set availability for foreign-club paddler');
+select throws_ok($$ insert into crew_members (crew_id, paddler_id) select c.id, p.id from crews c, club_two_paddler p $$, '42501', null, 'coach cannot add foreign-club paddler to crew');
+select throws_ok($$ insert into seats (heat_id, bench, side, paddler_id) select h.id, 2, 'right', p.id from heats h, club_two_paddler p $$, '42501', null, 'coach cannot seat foreign-club paddler');
+select throws_ok($$ insert into heat_reserves (heat_id, paddler_id) select h.id, p.id from heats h, club_two_paddler p $$, '42501', null, 'coach cannot reserve foreign-club paddler');
+select throws_ok($$ update heats set drummer_id = p.id from club_two_paddler p $$, '42501', null, 'coach cannot set foreign-club paddler as drummer');
 select tests.logout();
 select * from finish();
 rollback;

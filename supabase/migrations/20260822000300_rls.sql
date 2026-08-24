@@ -50,7 +50,7 @@ create policy crews_select on crews for select to authenticated using (club_id =
 create policy crews_write on crews for all to authenticated using (club_id = auth_club_id() and is_coach()) with check (club_id = auth_club_id() and is_coach());
 
 create policy crew_members_select on crew_members for select to authenticated using (crew_club(crew_id) = auth_club_id());
-create policy crew_members_write on crew_members for all to authenticated using (crew_club(crew_id) = auth_club_id() and is_coach()) with check (crew_club(crew_id) = auth_club_id() and is_coach());
+create policy crew_members_write on crew_members for all to authenticated using (crew_club(crew_id) = auth_club_id() and is_coach() and paddler_club(paddler_id) = auth_club_id()) with check (crew_club(crew_id) = auth_club_id() and is_coach() and paddler_club(paddler_id) = auth_club_id());
 
 create policy sessions_select on sessions for select to authenticated using (club_id = auth_club_id());
 create policy sessions_write on sessions for all to authenticated using (club_id = auth_club_id() and is_coach()) with check (club_id = auth_club_id() and is_coach());
@@ -59,13 +59,13 @@ create policy races_select on races for select to authenticated using (session_c
 create policy races_write on races for all to authenticated using (session_club(session_id) = auth_club_id() and is_coach()) with check (session_club(session_id) = auth_club_id() and is_coach());
 
 create policy heats_select on heats for select to authenticated using (race_club(race_id) = auth_club_id());
-create policy heats_write on heats for all to authenticated using (race_club(race_id) = auth_club_id() and is_coach()) with check (race_club(race_id) = auth_club_id() and is_coach());
+create policy heats_write on heats for all to authenticated using (race_club(race_id) = auth_club_id() and is_coach()) with check (race_club(race_id) = auth_club_id() and is_coach() and (drummer_id is null or paddler_club(drummer_id) = auth_club_id()) and (sweep_id is null or paddler_club(sweep_id) = auth_club_id()));
 
 create policy seats_select on seats for select to authenticated using (heat_club(heat_id) = auth_club_id());
-create policy seats_write on seats for all to authenticated using (heat_club(heat_id) = auth_club_id() and is_coach()) with check (heat_club(heat_id) = auth_club_id() and is_coach());
+create policy seats_write on seats for all to authenticated using (heat_club(heat_id) = auth_club_id() and is_coach() and paddler_club(paddler_id) = auth_club_id()) with check (heat_club(heat_id) = auth_club_id() and is_coach() and paddler_club(paddler_id) = auth_club_id());
 
 create policy reserves_select on heat_reserves for select to authenticated using (heat_club(heat_id) = auth_club_id());
-create policy reserves_write on heat_reserves for all to authenticated using (heat_club(heat_id) = auth_club_id() and is_coach()) with check (heat_club(heat_id) = auth_club_id() and is_coach());
+create policy reserves_write on heat_reserves for all to authenticated using (heat_club(heat_id) = auth_club_id() and is_coach() and paddler_club(paddler_id) = auth_club_id()) with check (heat_club(heat_id) = auth_club_id() and is_coach() and paddler_club(paddler_id) = auth_club_id());
 
 create policy rules_select on category_rules for select to authenticated using (club_id = auth_club_id());
 create policy rules_write on category_rules for all to authenticated using (club_id = auth_club_id() and is_coach()) with check (club_id = auth_club_id() and is_coach());
@@ -73,7 +73,7 @@ create policy rules_write on category_rules for all to authenticated using (club
 -- availability: coaches see/write all in club; paddlers only their own rows
 create policy avail_select_coach on availability for select to authenticated using (is_coach() and session_club(session_id) = auth_club_id());
 create policy avail_select_self on availability for select to authenticated using (paddler_id = my_paddler_id());
-create policy avail_write_coach on availability for all to authenticated using (is_coach() and session_club(session_id) = auth_club_id()) with check (is_coach() and session_club(session_id) = auth_club_id());
+create policy avail_write_coach on availability for all to authenticated using (is_coach() and session_club(session_id) = auth_club_id() and paddler_club(paddler_id) = auth_club_id()) with check (is_coach() and session_club(session_id) = auth_club_id() and paddler_club(paddler_id) = auth_club_id());
 create policy avail_insert_self on availability for insert to authenticated with check (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id());
 create policy avail_update_self on availability for update to authenticated
   using (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id())
