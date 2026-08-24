@@ -377,7 +377,9 @@ def test_evaluate_fixtures_match_exactly(fixtures_dir):
 
 def test_greedy_golden_metrics_are_reproducible_from_seats(fixtures_dir):
     """The Swift side stored seats+metrics; our evaluate() must agree on the metrics for those seats."""
-    for f in fx.load_all(fixtures_dir / "placement"):
+    items = fx.load_all(fixtures_dir / "placement")
+    assert len(items) >= 5, "placement fixtures missing - parity gate would pass vacuously"
+    for f in items:
         g = f.raw.get("expected", {}).get("greedy")
         if not g: pytest.skip(f"{f.name} has no expected.greedy yet")
         lineup = f.lineup_from(g["seats"])
