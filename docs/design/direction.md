@@ -18,46 +18,50 @@ and make it feel premium.
   `#0D7377`, softer shapes.
 
 ## The enhancement (what "better" means)
-1. **Reconcile the two CrewCoach systems.** Keep the app's disciplined slate/white data-density AND
-   borrow the landing's typographic character: **Playfair Display** for display/brand moments
-   (wordmark, big screen titles, the hero metric), **Inter Tight** for all UI and data. This is the
-   single biggest lift in perceived quality.
-2. **Unify one brand accent: teal `#0D7377`** (already CrewCoach's landing CTA). Used for active nav,
-   selection, focus, links, and brand marks. The **primary action stays slate-900** (that black button
-   is premium) — teal is the identity accent, not the button colour.
-3. **First-class dark mode** (CrewCoach had none; the new product requires it). Slate-950 grounds,
-   brightened teal + status colours, borders become light hairlines.
+*Jun's calls (2026-08-25) after reviewing the concept: **sans-serif throughout** (no serif),
+**light mode only**, keep the **Liquid Glass**. Light look otherwise approved.*
+
+1. **Sans-serif, all of it — Inter Tight throughout.** UI, data, labels, wordmark, and display titles.
+   No Playfair / serif. Display moments earn their weight through size + heavier Inter Tight weights
+   (700/800) and tight tracking, not a second family. This keeps the CrewCoach *app* voice (which was
+   always Inter Tight sans), just sharpened.
+2. **Unify one brand accent: teal `#0D7377`** (CrewCoach's landing CTA). Active nav, selection, focus,
+   links, brand marks. The **primary action stays slate-900** (that black button is premium) — teal is
+   the identity accent, not the button colour.
+3. **Light mode only (v1).** Per Jun. The token architecture below stays theme-able so a dark mode
+   could be added later without a rework, but v1 ships light-only — do not build dark surfaces now.
 4. **Premium Apple polish + Liquid Glass** on floating chrome — the native enhancement CrewCoach (a web
-   app) couldn't have.
+   app) couldn't have. Lean into the glass on the heat switcher, toolbar, reserves tray, balance bar.
 5. **Refined geometry**: keep it crisp (CrewCoach's 2px is *too* sharp for touch) → 8px cards / 6px
    controls / 8px tiles. Hairline borders remain the primary depth cue; shadows stay restrained.
 6. **Tabular numerals everywhere** data appears; better spacing rhythm and touch density than the web app.
 
-## Palette — CrewCoach slate + teal (light / dark)
-| token | light | dark | role |
-|---|---|---|---|
-| `bg`           | `#FAFAFA` | `#0B0F14` | app background (CrewCoach off-white) |
-| `surface`      | `#FFFFFF` | `#111820` | cards, hull, main panel |
-| `surface2`     | `#F8FAFC` | `#18212B` | insets, table head, section bands (slate-50) |
-| `ink`          | `#0F172A` | `#E6EDF3` | primary text (slate-900) |
-| `ink2`         | `#475569` | `#94A3B8` | secondary (slate-600 / slate-400) |
-| `ink3`         | `#64748B` | `#64748B` | muted / micro-labels (slate-500) |
-| `border`       | `#E2E8F0` | `#243040` | hairline — the CrewCoach depth cue (slate-200) |
-| `primary`      | `#0F172A` | `#E6EDF3` | primary button (slate-900 → near-white on dark) |
-| `accent`       | `#0D7377` | `#2CB7B0` | brand teal — active, selection, focus, links |
-| `good`         | `#059669` | `#34D399` | balanced / within threshold (emerald-600) |
-| `danger`       | `#DC2626` | `#F87171` | over threshold / violation (red-600) |
-| `maleFill`/`maleBrd`     | `#DCFCE7` / `#86EFAC` | `#16351f` / `#2f6b3d` | Male tile |
-| `femaleFill`/`femaleBrd` | `#FEF3C7` / `#FCD34D` | `#3a2f10` / `#7a6320` | Female tile |
+## Palette — CrewCoach slate + teal (light only, v1)
+| token | value | role |
+|---|---|---|
+| `bg`           | `#FAFAFA` | app background (CrewCoach off-white) |
+| `surface`      | `#FFFFFF` | cards, hull, main panel |
+| `surface2`     | `#F8FAFC` | insets, table head, section bands (slate-50) |
+| `ink`          | `#0F172A` | primary text (slate-900) |
+| `ink2`         | `#475569` | secondary text (slate-600) |
+| `ink3`         | `#64748B` | muted / micro-labels (slate-500) |
+| `border`       | `#E2E8F0` | hairline — the CrewCoach depth cue (slate-200) |
+| `primary`      | `#0F172A` | primary button (slate-900) |
+| `accent`       | `#0D7377` | brand teal — active, selection, focus, links |
+| `good`         | `#059669` | balanced / within threshold (emerald-600) |
+| `danger`       | `#DC2626` | over threshold / violation (red-600) |
+| `maleFill`/`maleBrd`     | `#DCFCE7` / `#86EFAC` | Male tile (kept exactly) |
+| `femaleFill`/`femaleBrd` | `#FEF3C7` / `#FCD34D` | Female tile (kept exactly) |
 
-## Typography
-- **Inter Tight** — all UI, data, labels. Weights 500/600 dominant; headings semibold `tracking-tight`.
-  Micro-labels: `text-xs`/`11px` UPPERCASE, `tracking-wider`, slate-500. Tabular figures for all numbers.
-- **Playfair Display** (600/700, italic for emphasis) — the wordmark, large screen titles, the hero
-  metric on the Up-next card. Used with restraint; this is the "premium editorial" borrow from the
-  CrewCoach landing that lifts the whole app.
-- Native note: on device, Inter Tight is bundled; Playfair Display bundled for display only. (SF Pro is
-  the fallback, but Inter Tight *is* the CrewCoach signature and is kept.)
+*Define these as an asset-catalog colour set anyway (single "Any Appearance" value) so a dark set can
+be dropped in later without touching call sites.*
+
+## Typography — Inter Tight only
+- **Inter Tight** everywhere. No serif. Body/data 400–600; **display titles + wordmark 700/800 with
+  tight tracking** (`-0.02em`) at large sizes — weight and scale do the work a second family would.
+- Micro-labels: `11px`/`text-xs` UPPERCASE, `letter-spacing .09em`, slate-500 — the CrewCoach signature.
+- **Tabular figures** for every number (weights, erg, deltas, seat #s).
+- Native: bundle Inter Tight (variable) in the app; SF Pro is the only fallback in the stack.
 
 ## Liquid Glass — floating chrome only (real APIs)
 `.glassEffect()`, `GlassEffectContainer`, `glassEffectID`, `.buttonStyle(.glass)`.
