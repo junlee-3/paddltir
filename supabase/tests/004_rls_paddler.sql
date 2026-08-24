@@ -11,8 +11,10 @@ insert into heats (race_id, name) select id, 'Heat 1' from races;
 insert into seats (heat_id, bench, side, paddler_id) select h.id, 1, 'left', p.id from heats h, paddlers p where p.name='P Two';
 insert into erg_tests (paddler_id, metres, source) select id, 600, 'coach' from paddlers where name='P Two';
 select tests.logout();
+create temp table invite as select invite_code as code from clubs;
+grant select on invite to authenticated;
 
-select tests.login_as('p1@test.dev'); select join_club((select invite_code from clubs));
+select tests.login_as('p1@test.dev'); select join_club((select code from invite));
 -- reads
 select is((select count(*) from paddlers), 1::bigint, 'paddler reads only own base row');
 select is((select name from paddlers), 'P One', 'and it is theirs');

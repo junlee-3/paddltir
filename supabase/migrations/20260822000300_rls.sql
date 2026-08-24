@@ -15,11 +15,8 @@ alter table heat_reserves enable row level security;
 alter table category_rules enable row level security;
 alter table optimize_cache enable row level security;
 
--- clubs: members see only their own club; a user with no club yet (auth_club_id() is null)
--- can browse clubs so they can look up an invite code and join_club() before their profile
--- has a club_id — join_club/create_club are security definer and bypass this regardless,
--- but the invite-code lookup itself is a plain client-side select, so it needs a policy too.
-create policy clubs_select on clubs for select to authenticated using (id = auth_club_id() or auth_club_id() is null);
+-- clubs
+create policy clubs_select on clubs for select to authenticated using (id = auth_club_id());
 create policy clubs_update on clubs for update to authenticated using (id = auth_club_id() and is_coach()) with check (id = auth_club_id());
 
 -- profiles
