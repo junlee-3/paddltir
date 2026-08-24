@@ -560,6 +560,14 @@ language sql stable security definer set search_path = public as $$
   group by a.status
 $$;
 
+-- table access for API roles: privileges are broad here; ROW access is constrained by
+-- RLS in the next migration. anon gets nothing (and is revoked again in 0003).
+-- Empirically required: tables created by the migration role carry no ACL for
+-- authenticated, so RLS policies alone would still yield "permission denied".
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on all tables in schema public to authenticated, service_role;
+alter default privileges in schema public grant select, insert, update, delete on tables to authenticated, service_role;
+
 -- lock down execution
 revoke execute on all functions in schema public from public, anon;
 grant execute on function auth_club_id(), is_coach(), my_paddler_id(), crew_club(uuid), session_club(uuid), race_club(uuid), heat_club(uuid) to authenticated;
