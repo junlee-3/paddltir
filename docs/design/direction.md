@@ -1,6 +1,6 @@
 # Paddltir — Visual Direction (CrewCoach, enhanced)
 
-*Native SwiftUI, iOS 26 + macOS 26. Premium Apple sensibility, real Liquid Glass, full light + dark.*
+*Native SwiftUI, iOS 26 + macOS 26. Premium Apple sensibility, real Liquid Glass, light mode only (v1).*
 
 **Direction chosen by Jun (2026-08-25): carry the CrewCoach look & colour scheme forward, elevated.**
 Not the water/teal-identity that was explored and rejected. The job is to keep CrewCoach recognisable
@@ -80,8 +80,8 @@ the stats. This is CrewCoach's telemetry, made premium — not the rejected wate
 ## Motion, density, quality floor
 Physical spring drag with haptics; matched-geometry heat switch (`glassEffectID`); 200–320ms springs,
 exits ~70%; reduced-motion honoured. Dense tables done beautifully (tabular nums, subtle slate-50 head,
-hairline dividers, hover). Contrast ≥ 4.5:1 both themes; 44pt targets; VoiceOver on seats/gauges;
-Dynamic Type; safe-area aware. Custom favicon/wordmark (CrewCoach had the default Vite icon — replace it).
+hairline dividers, hover). Contrast ≥ 4.5:1; 44pt targets; VoiceOver on seats/gauges;
+Dynamic Type; safe-area aware; enforced light appearance (system chrome must not go dark). Custom favicon/wordmark (CrewCoach had the default Vite icon — replace it).
 
 ## Component inventory (coach app)
 Glass: HeatSwitcher · GlassToolbar · ReservesTray · UpNext actions · BalanceBar.
