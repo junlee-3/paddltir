@@ -51,9 +51,9 @@ fixtures to land on main (then `git merge main` into plan-3-solver).
 - [x] Brainstorm UX / screen architecture — all 6 sections approved
 - [x] Spec written and approved (docs/superpowers/specs/2026-08-22-paddltir-design.md)
 - [x] Roadmap + Plans 1–3 written and self-reviewed (docs/superpowers/plans/)
-- [ ] Execute Plan 1 (PaddltirCore)
-- [ ] Execute Plan 2 (Supabase) — needs OrbStack installed
-- [ ] Execute Plan 3 (Solver)
+- [~] Plan 1 (PaddltirCore): ALL 12 tasks complete+reviewed on branch plan-1-core; 56/56 tests, 0 warnings, bench 2.97ms; final whole-branch review in flight → then merge to main
+- [~] Plan 2 (Supabase): tasks 1–3 complete (incl. 4-round security hardening); task 4 (RLS) in fix round 2 (availability relocation + erg hardening); OrbStack installed, local stack live
+- [~] Plan 3 (Solver): tasks 1–2 complete (Python model + scoring parity EXACT vs Swift goldens incl. moves); task 2 review in flight; task 3 (MIP) next
 
 ## Next
 - [x] Write design spec → docs/superpowers/specs/2026-08-22-paddltir-design.md
