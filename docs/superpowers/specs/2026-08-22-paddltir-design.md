@@ -233,7 +233,7 @@ stage 5 0.5 s, stage 6 0.5 s; `proven[stage]` from HiGHS model status (stage 5
 realistically `false`). Bench count, gender bounds, locks, exclusions, roles all
 parameters. Deterministic for identical inputs.
 
-**Service:** FastAPI `POST /api/optimize` `{heat_id, locked_seats[],
+**Service (wire format is camelCase, matching the fixture contract — the §6 prose above uses snake_case for the math):** FastAPI `POST /api/optimize` `{heat_id, locked_seats[],
 excluded_paddler_ids[]}` → `{seats[], drummer_id, sweep_id, reserves[],
 metrics{}, proven{}, solve_ms, cached}`. Verifies Supabase JWT + coach role,
 one SQL read (psycopg), cache keyed by `sha256(canonical roster snapshot +
