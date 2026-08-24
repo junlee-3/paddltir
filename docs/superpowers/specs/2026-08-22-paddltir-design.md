@@ -192,7 +192,9 @@ bar per crew at render time.
 `auth.users` insert → `profiles` row; if `paddlers.email` matches → link
 `profile_id`, role `paddler`. `join_club(code, paddler_id?)` SECURITY DEFINER
 RPC validates the code and links; it is the only path by which a paddler
-writes to `paddlers`. `create_club(name)` RPC makes the caller `head_coach`.
+writes to `paddlers`. Email linking happens only after the address is verified
+(confirmation trigger); rows with a coach-entered email are reserved for that
+address and are not claimable by name. `create_club(name)` RPC makes the caller `head_coach`.
 
 **RLS:** helper `auth_club_id()`, `is_coach()`.
 - Coaches: full CRUD on every row of their club.
