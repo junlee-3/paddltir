@@ -6,6 +6,10 @@ evaluate fixture; each implementation asserts its own `expected.greedy` /
 `expected.mip` block for placement fixtures. Python additionally asserts that MIP
 metrics are lexicographically ≤ the greedy metrics.
 
+Both `FixtureTool` (Swift) and `paddltir_solver.fixtures` (Python) rewrite the whole
+JSON file when they update it, with sorted keys; any key not in this schema is dropped
+on rewrite. Keep both writers' models in sync with this schema.
+
 ## Common fields
 | key | type | notes |
 |---|---|---|
@@ -39,6 +43,10 @@ metrics are lexicographically ≤ the greedy metrics.
 `{ "seated": int, "totalPower": number, "weightLeft", "weightRight", "powerLeft", "powerRight": number,
 "sideMismatches": int, "seatMismatches": int, "trimMoment": number (signed, Σ w·arm incl. drummer/sweep),
 "women": int, "men": int, "moves"?: int }`
+
+`moves` = the number of `current`/reference seat assignments whose seat no longer holds
+the same paddler (a paddler newly placed into a previously empty seat is NOT a move);
+omitted when there is no reference lineup.
 
 Lexicographic key (lower is better): `(-seated, -totalPower, |weightLeft-weightRight|, sideMismatches,
 seatMismatches, |powerLeft-powerRight|, |trimMoment|, moves)`.
