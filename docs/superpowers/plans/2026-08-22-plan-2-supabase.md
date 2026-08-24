@@ -841,9 +841,13 @@ create view paddlers_public as
 select id, club_id, name, preferred_side, boat_role, profile_id, archived_at
 from paddlers where club_id = auth_club_id();
 
-revoke all on paddlers_with_power from anon;
-revoke all on paddlers_public from anon;
+-- CRITICAL: 0002's default-privilege grant gave authenticated INSERT/UPDATE/DELETE on new relations,
+-- and views are relations. paddlers_public is a DEFINER view owned by a BYPASSRLS role, so a write
+-- through it would rewrite the base paddlers table bypassing RLS. Revoke ALL, then grant SELECT only.
+revoke all on paddlers_with_power from anon, authenticated;
+revoke all on paddlers_public from anon, authenticated;
 grant select on paddlers_with_power, paddlers_public to authenticated;
+grant select on paddlers_with_power, paddlers_public to service_role;
 ```
 
 - [ ] **Step 4: Run the whole suite** — `supabase db reset && supabase test db` → 001–006 all ok.
