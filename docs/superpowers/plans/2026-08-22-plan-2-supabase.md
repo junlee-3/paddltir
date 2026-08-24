@@ -404,19 +404,20 @@ create temp table sam_row as select id from paddlers where name = 'Sam S';   -- 
 -- claimable list works before joining
 select is((select count(*) from claimable_paddlers((select invite_code from clubs limit 1))), 2::bigint, 'claimable lists unlinked paddlers');
 
--- lily joins: linked by email automatically
+-- lily joins: linked by email automatically (linkage asserted as postgres — authenticated
+-- must NOT be able to read auth.users, so the assertion runs after logout)
 select tests.login_as('lily@test.dev');
 select lives_ok($$ select join_club((select invite_code from clubs limit 1)) $$, 'lily joins with code');
-select is((select profile_id from paddlers where name='Lily L'), (select id from auth.users where email='lily@test.dev'), 'lily linked by email');
 select tests.logout();
+select is((select profile_id from paddlers where name='Lily L'), (select id from auth.users where email='lily@test.dev'), 'lily linked by email');
 
 -- sam joins claiming a name
 select tests.login_as('sam@test.dev');
 select lives_ok($$ select join_club((select invite_code from clubs limit 1), (select id from sam_row)) $$, 'sam claims his row');
-select is((select profile_id from paddlers where name='Sam S'), (select id from auth.users where email='sam@test.dev'), 'sam linked to his row');
-select is((select role from profiles where display_name='Sam'), 'paddler', 'joiner is paddler');
 select throws_ok($$ select join_club('NOPE1234') $$, 'P0001', 'invalid invite code', 'bad code rejected');
 select tests.logout();
+select is((select profile_id from paddlers where name='Sam S'), (select id from auth.users where email='sam@test.dev'), 'sam linked to his row');
+select is((select role from profiles where display_name='Sam'), 'paddler', 'joiner is paddler');
 
 select * from finish();
 rollback;
