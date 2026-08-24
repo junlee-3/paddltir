@@ -577,6 +577,7 @@ grant execute on function create_club(text), join_club(text, uuid), claimable_pa
 ```
 
 - [ ] **Step 5: Apply and test** — `supabase db reset && supabase test db` → 001 and 002 ok. If `create_club` is blocked by the profile trigger, check the GUC name matches exactly in both places.
+- [ ] **Step 5b: Security amendments (added 2026-08-24 after security review)** — apply every change in the amendments spec (CSPRNG invite codes; email linking only after verification via a confirmation trigger; NULL-safe profile guard; claim path honours email earmarking; claimable excludes earmarked rows; GUC cleared before returns; revoke profiles INSERT/DELETE + all TRUNCATE from user roles; service_role EXECUTE restored; 002 grows to plan(20) with guard coverage). Canonical text: the executed version lives in git on branch plan-2-supabase (commit "fix(db): harden profile guard, email-verified linking, claim rules, grants"); rationale in the SDD ledger.
 - [ ] **Step 6: Commit** — `git add supabase && git commit -m "feat(db): helpers, profile triggers, club RPCs, local test helpers"`
 
 ---
@@ -592,7 +593,7 @@ grant execute on function create_club(text), join_club(text, uuid), claimable_pa
 ```sql
 -- supabase/tests/003_rls_coach.sql
 begin;
-select plan(12);
+select plan(13);
 select tests.create_user('c1@test.dev','C1'); select tests.create_user('c2@test.dev','C2');
 select tests.login_as('c1@test.dev'); select create_club('Club One');
 insert into paddlers (club_id, name, weight_kg, gender) values (auth_club_id(), 'A', 70, 'male');
@@ -614,6 +615,7 @@ grant select on club_one to authenticated;  -- so the insert below fails on RLS 
 select tests.login_as('c2@test.dev'); select create_club('Club Two');
 select is((select count(*) from paddlers), 0::bigint, 'other club sees no paddlers');
 select is((select count(*) from seats), 0::bigint, 'other club sees no seats');
+select is((select count(*) from pg_tables where schemaname = 'public' and rowsecurity = false), 0::bigint, 'every public table has RLS enabled');
 select is((select count(*) from sessions), 0::bigint, 'other club sees no sessions');
 select is((select count(*) from clubs), 1::bigint, 'sees only own club');
 select throws_ok($$ insert into paddlers (club_id, name, weight_kg, gender) select id, 'X', 70, 'male' from club_one $$, '42501', null, 'cannot insert into other club');
