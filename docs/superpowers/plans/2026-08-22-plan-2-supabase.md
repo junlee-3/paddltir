@@ -631,7 +631,7 @@ rollback;
 ```sql
 -- supabase/tests/004_rls_paddler.sql
 begin;
-select plan(17);
+select plan(18);
 select tests.create_user('coach@test.dev','Coach'); select tests.create_user('p1@test.dev','P1'); select tests.create_user('p2@test.dev','P2');
 select tests.login_as('coach@test.dev'); select create_club('Club');
 insert into paddlers (club_id, name, email, weight_kg, gender) values (auth_club_id(), 'P One', 'p1@test.dev', 61.5, 'female');
@@ -665,6 +665,7 @@ update paddlers set weight_kg = 50 where id = my_paddler_id();   -- no UPDATE po
 select is((select weight_kg from paddlers where id = my_paddler_id()), 61.5::numeric, 'paddler cannot edit own weight');
 update paddlers set profile_id = auth.uid() where id in (select id from paddlers_public where name = 'P Two');  -- claim bypass ⇒ 0 rows
 select is((select profile_id from paddlers_public where name = 'P Two'), null, 'paddler cannot claim rows directly');
+select throws_ok($$ update availability set session_id = gen_random_uuid() where paddler_id = my_paddler_id() $$, '42501', null, 'cannot move availability to another club''s session');
 select throws_ok($$ insert into seats (heat_id, bench, side, paddler_id) select h.id, 2, 'left', my_paddler_id() from heats h $$, '42501', null, 'paddler cannot edit lineup');
 select throws_ok($$ update profiles set role = 'coach' where id = auth.uid() $$, '42501', null, 'paddler cannot self-promote');
 select is((select count(*) from availability), 1::bigint, 'paddler sees only own availability rows');
@@ -716,7 +717,7 @@ alter table optimize_cache enable row level security;
 
 -- clubs
 create policy clubs_select on clubs for select to authenticated using (id = auth_club_id());
-create policy clubs_update on clubs for update to authenticated using (id = auth_club_id() and is_coach()) with check (id = auth_club_id());
+create policy clubs_update on clubs for update to authenticated using (id = auth_club_id() and is_coach()) with check (id = auth_club_id() and is_coach());
 
 -- profiles
 create policy profiles_select on profiles for select to authenticated using (id = auth.uid() or (club_id is not null and club_id = auth_club_id()));
@@ -731,12 +732,17 @@ create policy paddlers_insert on paddlers for insert to authenticated with check
 create policy paddlers_update on paddlers for update to authenticated using (club_id = auth_club_id() and is_coach()) with check (club_id = auth_club_id() and is_coach());
 
 -- erg_tests
-create policy erg_select_coach on erg_tests for select to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
+-- helper keeps policies off RLS-protected subqueries (recursion-proof, like the other *_club helpers)
+create or replace function paddler_club(p_paddler uuid) returns uuid
+language sql stable security definer set search_path = public as $$ select club_id from paddlers where id = p_paddler $$;
+grant execute on function paddler_club(uuid) to authenticated;
+
+create policy erg_select_coach on erg_tests for select to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
 create policy erg_select_self on erg_tests for select to authenticated using (paddler_id = my_paddler_id());
-create policy erg_insert_coach on erg_tests for insert to authenticated with check (is_coach() and source = 'coach' and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
-create policy erg_insert_self on erg_tests for insert to authenticated with check (paddler_id = my_paddler_id() and source = 'self');
-create policy erg_update_coach on erg_tests for update to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
-create policy erg_delete_coach on erg_tests for delete to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
+create policy erg_insert_coach on erg_tests for insert to authenticated with check (is_coach() and source = 'coach' and paddler_club(paddler_id) = auth_club_id());
+create policy erg_insert_self on erg_tests for insert to authenticated with check (paddler_id = my_paddler_id() and source = 'self' and recorded_by = auth.uid());
+create policy erg_update_coach on erg_tests for update to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
+create policy erg_delete_coach on erg_tests for delete to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
 
 -- club-scoped tables readable by everyone in the club, writable by coaches
 create policy crews_select on crews for select to authenticated using (club_id = auth_club_id());
@@ -768,12 +774,15 @@ create policy avail_select_coach on availability for select to authenticated usi
 create policy avail_select_self on availability for select to authenticated using (paddler_id = my_paddler_id());
 create policy avail_write_coach on availability for all to authenticated using (is_coach() and session_club(session_id) = auth_club_id()) with check (is_coach() and session_club(session_id) = auth_club_id());
 create policy avail_insert_self on availability for insert to authenticated with check (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id());
-create policy avail_update_self on availability for update to authenticated using (paddler_id = my_paddler_id()) with check (paddler_id = my_paddler_id());
+create policy avail_update_self on availability for update to authenticated
+  using (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id())
+  with check (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id());
 
 -- optimize_cache: service role only (no policies) — also revoke table privileges
 revoke all on optimize_cache from anon, authenticated;
--- anon gets nothing anywhere
+-- anon gets nothing anywhere — now and for future tables (the platform default ACL grants anon TRUNCATE)
 revoke all on all tables in schema public from anon;
+alter default privileges in schema public revoke all on tables from anon;
 ```
 
 - [ ] **Step 4: Run** — `supabase db reset && supabase test db` → 003 ok; 004/005 still fail only on `paddlers_public` (next task).
