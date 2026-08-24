@@ -3,7 +3,9 @@ from paddltir_solver.mip import solve
 
 
 def test_mip_goldens(fixtures_dir):
-    for f in fx.load_all(fixtures_dir / "placement"):
+    items = fx.load_all(fixtures_dir / "placement")
+    assert len(items) >= 5, "placement fixtures missing"
+    for f in items:
         exp = f.raw["expected"]["mip"]
         res = solve(f.placement_request())
         exp_metrics = fx.Metrics.from_json(exp["metrics"])

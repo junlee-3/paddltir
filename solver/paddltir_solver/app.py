@@ -62,7 +62,7 @@ def optimize(body: OptimizeIn, conn=Depends(get_conn), user_id: str = Depends(ge
     if not _is_coach_of(conn, user_id, ctx.club_id): raise HTTPException(403, "coaches only")
     h = cache.input_hash(ctx.request)
     if (hit := _cache_get(conn, h)) is not None:
-        return hit | {"cached": True}
+        return hit | {"cached": True, "heatId": body.heatId}
     res = solve(ctx.request)
     out = {"heatId": body.heatId, "seats": res.lineup.as_json(), "drummerId": ctx.drummer_id, "sweepId": ctx.sweep_id,
            "reserves": res.unseated, "metrics": res.metrics.to_json(), "proven": res.proven, "ruleSatisfied": res.rule_satisfied,

@@ -23,9 +23,10 @@ def fake_ctx(heat_id, extra_locked, excluded):
     r = Roster(ps)
     return HeatContext("club1", PlacementRequest(Boat(5), r, tuple(c for c in r.ids if c not in excluded), None, None, tuple(extra_locked), None, None), None, None)
 
-def make_client(user="coach", coach=True):
+def make_client(user="coach", coach=True, conn=None):
     app = appmod.app
-    app.dependency_overrides[appmod.get_conn] = lambda: FakeConn()
+    conn = conn if conn is not None else FakeConn()
+    app.dependency_overrides[appmod.get_conn] = lambda: conn
     app.dependency_overrides[appmod.get_user_id] = lambda: user
     appmod._fetch_ctx = fake_ctx
     appmod._is_coach_of = lambda conn, uid, club: coach
@@ -44,6 +45,19 @@ def test_optimize_happy_path():
     assert len(j["seats"]) == 10 and "p0" not in {s["paddlerId"] for s in j["seats"]}
     assert j["metrics"]["seated"] == 10 and set(j["proven"]) >= {"seated", "weight"} and j["cached"] is False
     assert j["reserves"] == ["p11"] or len(j["reserves"]) == 1
+
+def test_cache_hit_echoes_requesting_heat_id():
+    # Cache key excludes heat identity, so a different heat with identical inputs must
+    # still get its own heatId echoed back on a cache hit, not the heatId that first
+    # populated the cache entry.
+    conn = FakeConn()
+    c = make_client(conn=conn)
+    r1 = c.post("/api/optimize", json={"heatId": "h1", "lockedSeats": [], "excludedPaddlerIds": ["p0"]})
+    assert r1.status_code == 200 and r1.json()["cached"] is False
+    r2 = c.post("/api/optimize", json={"heatId": "h2", "lockedSeats": [], "excludedPaddlerIds": ["p0"]})
+    j2 = r2.json()
+    assert j2["cached"] is True
+    assert j2["heatId"] == "h2"
 
 def test_not_coach_is_403():
     assert make_client(coach=False).post("/api/optimize", json={"heatId": "h1"}).status_code == 403
