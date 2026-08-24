@@ -22,7 +22,7 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
 - **Colors are light-only now** but declared as asset-catalog colour sets so a dark set drops in later.
 
 ## Sub-plans (write + execute in order)
-- [ ] **4a — Foundation** `2026-08-25-plan-4a-foundation.md`
+- [x] **4a — Foundation (MERGED ac2b8ea)** `2026-08-25-plan-4a-foundation.md`
       XcodeGen project (iOS+macOS), PaddltirCore linked, Inter Tight bundled, colour asset catalog from
       tokens, type scale + spacing, core reusable components (MicroLabel, GlassCard/Toolbar, PrimaryButton,
       SeatTile, TelemetryGrid, Pill), a **Design System gallery** screen. Verify: builds + screenshot.

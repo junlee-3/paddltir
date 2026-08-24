@@ -4,22 +4,33 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Phase 1 COMPLETE — all three backend/algorithm plans merged to main (2c34fac).**
-Milestone on main: PaddltirCore (Swift, 56 tests) · solver (Python, 25 tests) · supabase (98 pgTAP)
-· cross-language golden fixtures · vercel.json. Every task subagent-built + reviewed; security-critical
-SQL got 3 opus reviews + a final RLS-hardening pass. No open Critical/Important findings.
+**Building the SwiftUI coach app (Plan 4). Foundation MERGED; next = data layer + sync (4b).**
 
-NEXT (phase boundary — awaiting Jun's steer, see checkpoint): (a) GO-LIVE = create hosted Supabase
-project (Task 7, ap-southeast-2) + Vercel deploy + Plan 6 integration (end-to-end SQL exec against
-merged schema, the deferred solver hardening: UUID-validate heatId, httpx reuse, auth-before-conn).
-(b) APPS = building the coach app now. VISUAL DIRECTION SET & APPROVED by Jun (2026-08-25):
-**enhanced CrewCoach identity** — slate-on-white data tool, hairline borders, green=Male/amber=Female
-tiles + emerald/red balance verdicts KEPT EXACTLY; enhancements = single teal accent #0D7377,
-Inter Tight sans throughout (NO serif), LIGHT MODE ONLY (v1), native Liquid Glass on floating chrome,
-8px geometry, tabular numerals. Tokens in docs/design/direction.md; concept board in
-docs/design/concepts/coach-app-concepts.html. Jun rejected the initial water/teal identity and 4
-alt directions; wanted "CrewCoach but enhanced". NEXT: write Plan 4 (coach app) → build.
-Then Plan 5 (paddler PWA), go-live (hosted Supabase + Vercel), Plan 6 integration.
+MERGED TO MAIN:
+- Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
+  supabase (98 pgTAP, 3 opus security reviews) · cross-language golden fixtures · vercel.json.
+- **Plan 4a — Coach app FOUNDATION (commit ac2b8ea).** apple/ XcodeGen app (iOS26+macOS26), PaddltirCore
+  linked, Inter Tight bundled (OFL), full enhanced-CrewCoach design system (17 colour tokens, Inter Tight
+  type scale, primitives + domain components: SeatTile/TelemetryGrid/BalanceBeam/HeatSwitcher/AvailabilityRing),
+  Design System gallery (screenshot verified vs concept), real Liquid Glass, LIGHT MODE ENFORCED. Builds
+  iOS+macOS, reproducible from apple/project.yml. Final review clean.
+
+VISUAL DIRECTION (APPROVED by Jun): enhanced CrewCoach — slate-on-white, hairline borders, green=Male
+(#DCFCE7/#86EFAC) / amber=Female (#FEF3C7/#FCD34D) tiles + emerald(#059669)/red(#DC2626) verdicts KEPT;
+teal #0D7377 accent; Inter Tight sans (NO serif); LIGHT ONLY; Liquid Glass on floating chrome; 12px cards.
+Tokens: docs/design/direction.md. Concept: docs/design/concepts/coach-app-concepts.html (artifact published).
+
+BUILD MECHANICS (learned): XcodeGen (apple/project.yml → run `xcodegen generate` before each build);
+`.xcodeproj`/`DerivedData`/`screenshots` are git-ignored; build gate = `xcodebuild -scheme Paddltir
+-destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath DerivedData build/test`;
+UI verify = boot iPhone 17 Pro sim + `xcrun simctl io ... screenshot`. Real Liquid Glass API:
+`.glassEffect(.regular, in: .rect(cornerRadius:))` + `GlassEffectContainer(spacing:content:)` (iOS/macOS 26).
+
+REMAINING (in order): **Plan 4b** (data models + GRDB local store + Supabase sync) → 4c auth/onboarding →
+4d Schedule/availability → 4e Crews/Squad → 4f Lineup editor (the hero) → 4g coach-app integration.
+Then Plan 5 (paddler PWA), GO-LIVE (hosted Supabase project ap-southeast-2 + Vercel deploy), Plan 6
+end-to-end integration (incl. deferred solver hardening: UUID-validate heatId, httpx reuse, auth-before-conn).
+Execution: subagent-driven-development on a per-sub-plan branch/worktree, merge to main after each final review.
 
 ## (was) Phase 1 — Plans 1–3 (core, supabase, solver). Spec approved 2026-08-22.
 Plans live in `docs/superpowers/plans/` — start from `2026-08-22-roadmap.md`.
