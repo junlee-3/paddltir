@@ -17,7 +17,7 @@ alter table optimize_cache enable row level security;
 
 -- clubs
 create policy clubs_select on clubs for select to authenticated using (id = auth_club_id());
-create policy clubs_update on clubs for update to authenticated using (id = auth_club_id() and is_coach()) with check (id = auth_club_id());
+create policy clubs_update on clubs for update to authenticated using (id = auth_club_id() and is_coach()) with check (id = auth_club_id() and is_coach());
 
 -- profiles
 create policy profiles_select on profiles for select to authenticated using (id = auth.uid() or (club_id is not null and club_id = auth_club_id()));
@@ -32,12 +32,17 @@ create policy paddlers_insert on paddlers for insert to authenticated with check
 create policy paddlers_update on paddlers for update to authenticated using (club_id = auth_club_id() and is_coach()) with check (club_id = auth_club_id() and is_coach());
 
 -- erg_tests
-create policy erg_select_coach on erg_tests for select to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
+-- helper keeps policies off RLS-protected subqueries (recursion-proof, like the other *_club helpers)
+create or replace function paddler_club(p_paddler uuid) returns uuid
+language sql stable security definer set search_path = public as $$ select club_id from paddlers where id = p_paddler $$;
+grant execute on function paddler_club(uuid) to authenticated;
+
+create policy erg_select_coach on erg_tests for select to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
 create policy erg_select_self on erg_tests for select to authenticated using (paddler_id = my_paddler_id());
-create policy erg_insert_coach on erg_tests for insert to authenticated with check (is_coach() and source = 'coach' and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
-create policy erg_insert_self on erg_tests for insert to authenticated with check (paddler_id = my_paddler_id() and source = 'self');
-create policy erg_update_coach on erg_tests for update to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
-create policy erg_delete_coach on erg_tests for delete to authenticated using (is_coach() and exists (select 1 from paddlers p where p.id = paddler_id and p.club_id = auth_club_id()));
+create policy erg_insert_coach on erg_tests for insert to authenticated with check (is_coach() and source = 'coach' and paddler_club(paddler_id) = auth_club_id());
+create policy erg_insert_self on erg_tests for insert to authenticated with check (paddler_id = my_paddler_id() and source = 'self' and recorded_by = auth.uid());
+create policy erg_update_coach on erg_tests for update to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
+create policy erg_delete_coach on erg_tests for delete to authenticated using (is_coach() and paddler_club(paddler_id) = auth_club_id());
 
 -- club-scoped tables readable by everyone in the club, writable by coaches
 create policy crews_select on crews for select to authenticated using (club_id = auth_club_id());
@@ -69,9 +74,12 @@ create policy avail_select_coach on availability for select to authenticated usi
 create policy avail_select_self on availability for select to authenticated using (paddler_id = my_paddler_id());
 create policy avail_write_coach on availability for all to authenticated using (is_coach() and session_club(session_id) = auth_club_id()) with check (is_coach() and session_club(session_id) = auth_club_id());
 create policy avail_insert_self on availability for insert to authenticated with check (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id());
-create policy avail_update_self on availability for update to authenticated using (paddler_id = my_paddler_id()) with check (paddler_id = my_paddler_id());
+create policy avail_update_self on availability for update to authenticated
+  using (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id())
+  with check (paddler_id = my_paddler_id() and session_club(session_id) = auth_club_id());
 
 -- optimize_cache: service role only (no policies) — also revoke table privileges
 revoke all on optimize_cache from anon, authenticated;
 -- anon gets nothing anywhere
 revoke all on all tables in schema public from anon;
+alter default privileges in schema public revoke all on tables from anon;
