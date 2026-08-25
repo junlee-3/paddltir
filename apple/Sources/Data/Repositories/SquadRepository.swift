@@ -20,29 +20,64 @@ struct SquadRepository: Sendable {
         self.db = db
     }
 
+    /// Shared fetch used by both the one-shot read and the observation
+    /// (static + `@Sendable`-safe so GRDB's tracking closure can call it).
+    static func fetchPaddlers(_ db: Database) throws -> [PaddlerWithErg] {
+        let rows = try PaddlerRow
+            .filter(Column("archived_at") == nil)
+            .order(Column("name"))
+            .fetchAll(db)
+        let ergs = try ErgTest
+            .filter(rows.map(\.id).contains(Column("paddler_id")))
+            .fetchAll(db)
+        return PaddlerWithErg.join(rows: rows, ergs: ergs)
+    }
+
     /// Non-archived paddlers, alphabetical by name, each joined to their
     /// latest erg test — the local `paddlers_with_power` equivalent.
     func paddlers() async throws -> [PaddlerWithErg] {
-        try db.read { db in
-            let rows = try PaddlerRow
-                .filter(Column("archived_at") == nil)
-                .order(Column("name"))
-                .fetchAll(db)
-            let ergs = try ErgTest
-                .filter(rows.map(\.id).contains(Column("paddler_id")))
-                .fetchAll(db)
-            return PaddlerWithErg.join(rows: rows, ergs: ergs)
-        }
+        try db.read(Self.fetchPaddlers)
+    }
+
+    /// Emits the current squad, then again whenever paddlers/erg_tests change.
+    func observePaddlers() -> ValueObservation<ValueReducers.Fetch<[PaddlerWithErg]>> {
+        ValueObservation.tracking(Self.fetchPaddlers)
+    }
+
+    /// Every erg test for a paddler, oldest-first — shared by `ergHistory`
+    /// and `fetchPaddlerDetail` (which additionally guards on the paddler
+    /// row existing).
+    static func fetchErgHistory(_ db: Database, paddlerId: String) throws -> [ErgTest] {
+        try ErgTest
+            .filter(Column("paddler_id") == paddlerId)
+            .order(Column("tested_at"))
+            .fetchAll(db)
     }
 
     /// A single paddler (archived or not) joined to their latest erg test,
     /// or `nil` if `id` doesn't exist.
     func paddler(id: String) async throws -> PaddlerWithErg? {
-        try db.read { db in
-            guard let row = try PaddlerRow.fetchOne(db, key: id) else { return nil }
-            let ergs = try ErgTest.filter(Column("paddler_id") == id).fetchAll(db)
-            return PaddlerWithErg.join(rows: [row], ergs: ergs).first
+        try db.read { db in try Self.fetchPaddlerDetail(db, id: id).paddler }
+    }
+
+    struct PaddlerDetail: Equatable, Sendable {
+        var paddler: PaddlerWithErg?
+        var ergHistory: [ErgTest]
+    }
+
+    /// Shared fetch behind `paddler(id:)`'s paddler half and
+    /// `observePaddlerDetail(id:)`.
+    static func fetchPaddlerDetail(_ db: Database, id: String) throws -> PaddlerDetail {
+        guard let row = try PaddlerRow.fetchOne(db, key: id) else {
+            return PaddlerDetail(paddler: nil, ergHistory: [])
         }
+        let ergs = try Self.fetchErgHistory(db, paddlerId: id)
+        return PaddlerDetail(paddler: PaddlerWithErg.join(rows: [row], ergs: ergs).first, ergHistory: ergs)
+    }
+
+    /// Emits the current paddler + erg history, then again on any change.
+    func observePaddlerDetail(id: String) -> ValueObservation<ValueReducers.Fetch<PaddlerDetail>> {
+        ValueObservation.tracking { db in try Self.fetchPaddlerDetail(db, id: id) }
     }
 
     /// Inserts `row` if its id is new, otherwise overwrites the existing row
@@ -94,11 +129,6 @@ struct SquadRepository: Sendable {
 
     /// Every erg test for a paddler, oldest-first — the erg-history sparkline.
     func ergHistory(paddlerId: String) async throws -> [ErgTest] {
-        try db.read { db in
-            try ErgTest
-                .filter(Column("paddler_id") == paddlerId)
-                .order(Column("tested_at"))
-                .fetchAll(db)
-        }
+        try db.read { db in try Self.fetchErgHistory(db, paddlerId: paddlerId) }
     }
 }

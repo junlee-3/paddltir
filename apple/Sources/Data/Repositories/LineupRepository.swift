@@ -26,14 +26,22 @@ struct LineupRepository: Sendable {
         self.db = db
     }
 
+    /// Shared fetch behind `heats(raceId:)` and `observeHeats(raceId:)`.
+    static func fetchHeats(_ db: Database, raceId: String) throws -> [Heat] {
+        try Heat
+            .filter(Column("race_id") == raceId)
+            .order(Column("sort_order"))
+            .fetchAll(db)
+    }
+
     /// A race's heats, in their configured display order.
     func heats(raceId: String) async throws -> [Heat] {
-        try db.read { db in
-            try Heat
-                .filter(Column("race_id") == raceId)
-                .order(Column("sort_order"))
-                .fetchAll(db)
-        }
+        try db.read { db in try Self.fetchHeats(db, raceId: raceId) }
+    }
+
+    /// Emits the current heats for a race, then again whenever heats change.
+    func observeHeats(raceId: String) -> ValueObservation<ValueReducers.Fetch<[Heat]>> {
+        ValueObservation.tracking { db in try Self.fetchHeats(db, raceId: raceId) }
     }
 
     /// A heat with its seats and reserves, or `nil` if `id` doesn't exist.
