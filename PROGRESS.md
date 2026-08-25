@@ -6,17 +6,17 @@
 ## Current phase
 **Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule + Crews/Squad + Lineup editor MERGED; NOW EXECUTING Plan 4g (integration & polish) — IN PROGRESS.**
 
-**RESUME HERE (session hand-off 2026-08-25):** Plan 4g is mid-execution via subagent-driven-development.
-- Plan: `docs/superpowers/plans/2026-08-25-plan-4g-integration-polish.md` (6 tasks).
-- Worktree: `.worktrees/plan-4g-polish` (branch `plan-4g-polish`, base c202403). **Copy `apple/Sources/App/Secrets.swift`
-  into it if missing** (git-ignored).
-- Ledger (source of truth for which task is next): `.superpowers/sdd/2026-08-25-plan-4g-integration-polish/progress.md`
-  — read its Task log; tasks with a `complete` line are DONE; resume at the first task without one. Briefs are
-  pre-generated in that directory (`task-N-brief.md`). Rulings G1–G3 in the ledger (two plan file-path defects) apply.
-- Process per task: implementer subagent → `scripts/review-package` → reviewer → fix loop → ledger `complete` line.
-  Final whole-branch review → fast-forward merge to main → verify merged tree → update this file + roadmap → delete
-  worktree/branch/ledger. (Opus was degraded for final reviews earlier this session; Sonnet worked reliably.)
-- Model note: commits through Plan 4b were Fable 5; Plans 4c–4g so far were Opus 4.8 (see git trailers).
+**RESUME HERE (overnight autonomous run, 2026-08-26 — Fable 5):** Plan 4g is mid-execution via subagent-driven-development.
+- Plan: `docs/superpowers/plans/2026-08-25-plan-4g-integration-polish.md` (6 tasks). Worktree: `.worktrees/plan-4g-polish`
+  (branch `plan-4g-polish`, base c202403). **Copy `apple/Sources/App/Secrets.swift` into it if missing** (git-ignored).
+- **The ledger is the source of truth for what is next:** `.superpowers/sdd/2026-08-25-plan-4g-integration-polish/progress.md`
+  — its Task log's LAST lines say exactly where the loop is (tasks with a `complete` line are DONE; a `fix round` line means
+  resume that loop; a "dispatched" line with no result means the subagent died — re-dispatch it from its `task-N-brief.md`).
+- Process per task: implementer subagent → `scripts/review-package` → reviewer → fix loop → ledger `complete` line. Final
+  whole-branch review → fast-forward merge to main → verify merged tree → update this file + roadmap → delete worktree/branch/ledger.
+- After 4g merges: execute **Plan 4h** (`docs/superpowers/plans/2026-08-26-plan-4h-quality-pass.md`, already written) the same
+  way (new worktree `.worktrees/plan-4h-quality`), then Plan 5 (PWA). STOP before go-live (needs Jun's credentials).
+- Model note: commits through Plan 4b were Fable 5; Plans 4c–4g Tasks 1–5 were Opus 4.8; 4g wrap-up + 4h onward are Fable 5.
 
 **PLAN 4h CANDIDATE — "quality pass" on the 4c–4g app layer (Jun wants premium-grade code; Opus's self-assessment
 of its own weakest points, for Fable to plan against). Do this AFTER 4g merges, BEFORE Plan 5. NOT a rewrite —
