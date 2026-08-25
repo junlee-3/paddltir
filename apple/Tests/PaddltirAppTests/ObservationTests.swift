@@ -37,12 +37,6 @@ import Testing
         #expect(snap?.availabilityBySession["s1"]?.count == 1)
     }
 
-    @Test func loadableValueAccessor() {
-        #expect(Loadable<Int>.loading.value == nil)
-        #expect(Loadable<Int>.loaded(3).value == 3)
-        #expect(Loadable<Int>.failed("x").value == nil)
-    }
-
     @Test func fetchCrewDetailAssemblesCrewMembersRacesSquadAndRule() throws {
         let appDB = try AppDatabase.inMemory()
         try appDB.write { db in

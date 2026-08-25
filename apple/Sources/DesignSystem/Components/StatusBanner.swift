@@ -24,6 +24,7 @@ public struct StatusBanner: View {
             Spacer(minLength: DS.Space.s)
             if let actionTitle, let action {
                 Button(actionTitle, action: action).font(.dsCaption.weight(.semibold)).foregroundStyle(DS.accent).buttonStyle(.plain)
+                    .frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
             }
         }
         .padding(DS.Space.m)

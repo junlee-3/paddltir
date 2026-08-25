@@ -154,8 +154,13 @@ private struct DebugFirstHeatEditor: View {
             }
         }
         .task {
-            let first = (try? app.environment.db.read { try Race.order(Column("sort_order")).fetchOne($0) }) ?? nil
-            race = first
+            // Observe rather than read once: on a fresh install the first race only arrives with sync.
+            let firstRace = ValueObservation.tracking { db in try Race.order(Column("sort_order")).fetchOne(db) }
+            do {
+                for try await candidate in firstRace.values(in: app.environment.db.dbQueue) {
+                    if let candidate { race = candidate; break }
+                }
+            } catch { /* DEBUG harness only — leave the spinner */ }
         }
     }
 }

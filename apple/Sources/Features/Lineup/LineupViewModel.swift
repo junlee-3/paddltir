@@ -78,7 +78,7 @@ final class LineupViewModel {
     func addHeat(raceId: String) async {
         do {
             let h = try await repo.createHeat(raceId: raceId, name: "Heat \(heats.count + 1)")
-            selectedHeatIndex = heats.count
+            selectedHeatIndex = heats.firstIndex { $0.id == h.id } ?? heats.count
             await load(heatId: h.id)
         } catch { lastError = error.localizedDescription }
     }
