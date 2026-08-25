@@ -4,24 +4,36 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**PLAN 4 (the SwiftUI coach app) COMPLETE — 4a–4g all merged (main 59a2a85). NOW EXECUTING Plan 4h (quality pass, Fable-authored) — then Plan 5 (paddler PWA), then go-live.**
+**PLAN 4h (quality pass) MERGED — main b809334. NOW EXECUTING Plan 5 (paddler PWA, `web/`) via subagent-driven-development. STOP before go-live (hosted Supabase + Vercel need Jun's credentials).**
 
-**RESUME HERE (overnight autonomous run, 2026-08-26 — Fable 5):** Plan 4h is executing via subagent-driven-development.
-- Plan: `docs/superpowers/plans/2026-08-26-plan-4h-quality-pass.md` (8 tasks). Worktree: `.worktrees/plan-4h-quality`
-  (branch `plan-4h-quality`, from main after 59a2a85). **Copy `apple/Sources/App/Secrets.swift` into it if missing.**
-- **Progress 2026-08-26 ~02:15:** Tasks 1–5 COMPLETE on `plan-4h-quality` (pushed; 102 tests/30 suites; rulings H1–H11 in the ledger);
-  Task 6 (editor drag/drop + redo + a11y carry) implemented (108/31) and under review; then T7 (multi-heat), T8 (verify/docs), final review, merge.
-- **Ledger = source of truth for what's next:** `.superpowers/sdd/2026-08-26-plan-4h-quality-pass/progress.md`
-  (pre-flight rulings H1–H3 + carried 4g-review recs at the top; Task log at the bottom — resume at the first task
-  without a `complete` line; a "dispatched" line with no result = the subagent died → re-dispatch from `task-N-brief.md`).
-- Process per task: implementer → `scripts/review-package` → reviewer → fix loop → ledger `complete`. Final whole-branch
-  review (fable) → merge (regular merge commit if main moved) → verify merged tree → docs → cleanup.
-- After 4h: Plan 5 (PWA) — **plan WRITTEN & committed (467a354): `docs/superpowers/plans/2026-08-26-plan-5-paddler-pwa.md`**
-  (6 tasks; Next.js App Router + @supabase/ssr in `web/`; realtime publication migration + pgTAP 007; PWA; Playwright smoke).
-  Execute it via SDD on a fresh worktree `.worktrees/plan-5-pwa` after 4h merges. STOP before go-live (needs Jun's credentials). Model note: through 4b = Fable 5; 4c–4g T1–5 = Opus 4.8;
-  4g wrap-up + 4h onward = Fable 5 (see git trailers).
+**RESUME HERE (overnight autonomous run, 2026-08-26 — Fable 5):**
+- Plan 5: `docs/superpowers/plans/2026-08-26-plan-5-paddler-pwa.md` (6 tasks). Worktree: `.worktrees/plan-5-pwa` (branch `plan-5-pwa`, from
+  main after b809334). Ledger = source of truth: `.superpowers/sdd/2026-08-26-plan-5-paddler-pwa/progress.md` (pre-flight rulings P1–P4 at the top;
+  resume at the first task without a `complete` line; a "dispatched" line with no result = the subagent died → re-dispatch from `task-N-brief.md`).
+- Local stack must be up (`supabase status`) with `seed_dev.sql` loaded; `web/.env.local` from `web/.env.example` (never commit it).
+- Process per task: implementer → `scripts/review-package` → reviewer → fix loop → ledger `complete`. Final whole-branch review (fable) → ONE fix wave →
+  scoped re-review → merge (regular merge commit) → verify merged tree → docs → cleanup.
+- Model note: through 4b = Fable 5; 4c–4g T1–5 = Opus 4.8; 4g wrap-up, 4h and Plan 5 = Fable 5 controller with Sonnet implementers/reviewers
+  and Fable final reviews (see git trailers).
 
 MERGED TO MAIN:
+- **Plan 4h — Quality pass on the app layer (merge b809334; branch head 7b5a156; 12 commits).** Reactive GRDB `ValueObservation`s end-to-end:
+  repositories expose `observeX()` sharing one static `fetchX(_ db:)` with the one-shot reads (+ snapshot structs); every tab + detail view-model
+  is `@MainActor @Observable` with `observe()`/`isLoaded`/`lastError`, built eagerly via `State(initialValue:)` — `syncGeneration`, `didLoad`,
+  reload-after-write and `RaceHeatLoader` are gone; `AppEnvironment.clubId` is live. `StatusBanner` DS component: sync banner in `MainShell`
+  (both platforms) + `lastError` banners on every screen (a failed first read renders the empty state + banner, never a spinner). Lineup editor:
+  drag & drop (`HullActions`, id-validated drops), context menu + VoiceOver custom actions (unseat / lock / drummer / sweep / clear), redo,
+  haptics on mutations, spring motion, multi-heat switcher (`observeHeats` + `addHeat`; heats are born with their race in `createRace`'s
+  transaction — no editor auto-create, which could duplicate during the races/heats sync window), section bands, `GenderBadge`, iPad/Mac centred
+  hull + inspector, always-present reserves tray, **locked-seat rule** (a lock refuses every manual move; unlock first), seat a11y single-sourced in
+  `SeatTile.accessibilityDescription` with contextual hints. Tests 95 → **126 (33 suites)**; gated live 2/2; fresh-install single-launch
+  screenshots (3 tabs + editor) verified on the merged tree. Execution record (rulings H1–H13, F1–F8, R1):
+  `docs/superpowers/plans/2026-08-26-plan-4h-execution-ledger.md`.
+  **Deferred from 4h (tracked):** Optimise (server MIP) @ go-live; Share snapshot; squad filter chips; availability notes; erg `recordedBy`; per-heat
+  gender check; heat rename/delete; `isTargeted` hover affordance / `SeatTile.lifted`; DS layout constants for the 560/360/40 literals;
+  `ObservationTests` iterator timeouts; `nonisolated(unsafe)` ISO formatters in `PostgRESTCoding`; per-edit `saveSeats` outbox churn;
+  `loadingHeatId` guard against a harmless double load; Edit/Archive text buttons below 44pt; `MainShell` dual environment access;
+  `HeatSwitcher` magic padding; full a11y audit.
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
   supabase (98 pgTAP, 3 opus security reviews) · cross-language golden fixtures · vercel.json.
 - **Plan 4a — Coach app FOUNDATION (commit ac2b8ea).** apple/ XcodeGen app (iOS26+macOS26), PaddltirCore

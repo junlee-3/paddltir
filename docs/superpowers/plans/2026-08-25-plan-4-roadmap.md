@@ -76,6 +76,11 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
       placeholder fix (explicit verbatim prompt), complete VoiceOver labels on hull seats. 95 tests + gated live e2e.
       Two task-review fix rounds (a11y label regression; placeholder) + one final-review fix wave (accurate editor
       empty-state copy; dismissible no-club sheet). **PLAN 4 (COACH APP) COMPLETE.** Next: Plan 4h quality pass.
+- [x] **4h — Quality pass (MERGED b809334)** `2026-08-26-plan-4h-quality-pass.md`
+      Reactive ValueObservations end-to-end (no load-once/reload hacks), eager view-models, StatusBanner error surfaces, editor drag & drop /
+      context menu / redo / haptics, multi-heat switcher (heats born with races), section bands, GenderBadge, wide-screen inspector, locked-seat
+      rule, single-source seat a11y. 126 tests / 33 suites. Fable final review → one fix wave (5 Important) → scoped re-review → remainders →
+      merge. Deferred list in PROGRESS.md. Next: Plan 5 (paddler PWA).
 
 ## Cross-cutting contracts (every sub-plan honours)
 - Import `PaddltirCore` for ALL domain logic (scoring, greedy, suggestions, validation) — no logic in the app.
