@@ -228,7 +228,7 @@ import Testing
         }
         let repo = ScheduleRepository(db: appDB)
 
-        let sessions = try await repo.upcomingSessions()
+        let sessions = try await repo.sessions()
         #expect(sessions.map(\.id) == ["session-0", sessionId])
     }
 

@@ -1,8 +1,7 @@
 // ScheduleRepository.swift
-// Async, GRDB-backed, offline-first, read-only repository over `sessions`
+// Async, GRDB-backed, offline-first repository over `sessions`
 // (+ `availability`, `races`) — what the Schedule feature screens (session
-// list, session detail) consume. No writes yet: availability capture and
-// session editing land with the screens that need them in a later plan; see
+// list, session detail) consume. Includes read and write operations; see
 // SquadRepository.swift's header for the read/write split the other three
 // repositories follow.
 
@@ -19,7 +18,7 @@ struct ScheduleRepository: Sendable {
     /// Every session, soonest first. Not filtered to the future — the
     /// schedule screen owns any "upcoming vs. past" split; this always
     /// returns the full local set in chronological order.
-    func upcomingSessions() async throws -> [SessionRow] {
+    func sessions() async throws -> [SessionRow] {
         try db.read { db in
             try SessionRow.order(Column("starts_at")).fetchAll(db)
         }
@@ -44,6 +43,50 @@ struct ScheduleRepository: Sendable {
                 .filter(Column("session_id") == sessionId)
                 .order(Column("sort_order"))
                 .fetchAll(db)
+        }
+    }
+
+    // MARK: - Writes (each mutation + its outbox entry in one transaction)
+
+    /// Creates a training or race-day session for `clubId`.
+    func createSession(clubId: String, kind: SessionKind, title: String,
+                       startsAt: Date, venue: String?, notes: String?) async throws -> SessionRow {
+        let row = SessionRow(id: UUID().uuidString, clubId: clubId, kind: kind, title: title,
+                             startsAt: startsAt, venue: venue, notes: notes,
+                             createdAt: Date(), updatedAt: nil)
+        try db.write { db in
+            try row.insert(db)
+            try Outbox.enqueue(db: db, table: SessionRow.databaseTableName, pk: row.syncPrimaryKey,
+                               op: "insert", payload: try PostgREST.encoder.encode(row))
+        }
+        return row
+    }
+
+    /// Coach override (or first capture) of a paddler's availability for a
+    /// session — upserts on (session_id, paddler_id).
+    func setAvailability(sessionId: String, paddlerId: String,
+                         status: AvailabilityStatus, note: String?) async throws {
+        let row = Availability(sessionId: sessionId, paddlerId: paddlerId,
+                               status: status, note: note, updatedAt: Date())
+        try db.write { db in
+            try row.upsert(db)
+            try Outbox.enqueue(db: db, table: Availability.databaseTableName, pk: row.syncPrimaryKey,
+                               op: "update", payload: try PostgREST.encoder.encode(row))
+        }
+    }
+
+    /// Adds a race to a race-day session; `sort_order` is the next free slot.
+    func createRace(sessionId: String, crewId: String, name: String,
+                    boatSize: BoatSize, distanceM: Int?) async throws -> Race {
+        try db.write { db in
+            let order = try Race.filter(Column("session_id") == sessionId).fetchCount(db)
+            let row = Race(id: UUID().uuidString, sessionId: sessionId, crewId: crewId, name: name,
+                           boatSize: boatSize, distanceM: distanceM, sortOrder: order,
+                           createdAt: Date(), updatedAt: nil)
+            try row.insert(db)
+            try Outbox.enqueue(db: db, table: Race.databaseTableName, pk: row.syncPrimaryKey,
+                               op: "insert", payload: try PostgREST.encoder.encode(row))
+            return row
         }
     }
 }
