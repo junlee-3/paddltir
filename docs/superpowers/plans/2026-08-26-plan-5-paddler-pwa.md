@@ -458,6 +458,13 @@ describe("safeNext", () => {
     expect(safeNext("")).toBe("/");
     expect(safeNext(null)).toBe("/");
   });
+  it("rejects backslash tricks (W1) and dot-segment collapse to //host (W11)", () => {
+    for (const bad of ["/\\evil.com", "/\\/evil.com", "/%5Cevil.com", "/%5cevil.com", "/.//evil.com", "/erg/..//evil.com", "/%2e%2e//evil.com", "/.%2e//evil.com"]) {
+      expect(safeNext(bad)).toBe("/");
+    }
+    expect(safeNext("/erg#frag")).toBe("/erg");
+    expect(safeNext("/erg/../availability")).toBe("/availability");
+  });
 });
 ```
 `web/lib/auth/gate.test.ts`:
@@ -501,7 +508,11 @@ export function isPublicPath(pathname: string): boolean {
 export function safeNext(raw: string | null): string {
   if (!raw || !raw.startsWith("/") || /^\/[\/\\]/.test(raw) || raw.includes("\\") || /%5c/i.test(raw)) return "/";
   const u = new URL(raw, "http://x");
-  return u.origin === "http://x" ? u.pathname + u.search : "/";
+  if (u.origin !== "http://x") return "/";
+  // Ruling W11: dot-segment normalisation can turn a same-origin input into protocol-relative output
+  // (`/.//evil.com` → `//evil.com`), so guard the OUTPUT too.
+  if (u.pathname.startsWith("//") || u.pathname.startsWith("/\\")) return "/";
+  return u.pathname + u.search;
 }
 ```
 `web/lib/auth/gate.ts`:
