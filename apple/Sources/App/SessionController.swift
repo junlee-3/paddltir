@@ -23,6 +23,14 @@ final class SessionController {
     /// cancelled (RootView owns the `.task`). Yields `.initialSession`
     /// immediately on subscribe, so the first launch state resolves here.
     func start() async {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_AUTOSIGNIN"] == "1" {
+            if (try? await client.auth.session) == nil {
+                try? await client.auth.signIn(email: "coach@paddltir.dev", password: "password123")
+                await refreshClub()
+            }
+        }
+        #endif
         for await (_, session) in client.auth.authStateChanges {
             await resolve(session: session)
         }

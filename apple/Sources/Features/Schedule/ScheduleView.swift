@@ -77,7 +77,6 @@ struct ScheduleView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(DS.Space.m)
             }
         }
         .buttonStyle(.plain)
