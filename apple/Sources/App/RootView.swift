@@ -29,7 +29,12 @@ struct RootView: View {
 /// Design tab exercising the whole design system), and a `NavigationSplitView` on macOS.
 private struct MainShell: View {
     #if os(iOS)
-    @State private var selection = 0
+    @State private var selection: Int = {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_TAB"], let tag = Int(raw) { return tag }
+        #endif
+        return 0
+    }()
     #endif
 
     var body: some View {
