@@ -4,7 +4,19 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule + Crews/Squad + Lineup editor MERGED; next = coach-app integration & polish (4g).**
+**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule + Crews/Squad + Lineup editor MERGED; NOW EXECUTING Plan 4g (integration & polish) — IN PROGRESS.**
+
+**RESUME HERE (session hand-off 2026-08-25):** Plan 4g is mid-execution via subagent-driven-development.
+- Plan: `docs/superpowers/plans/2026-08-25-plan-4g-integration-polish.md` (6 tasks).
+- Worktree: `.worktrees/plan-4g-polish` (branch `plan-4g-polish`, base c202403). **Copy `apple/Sources/App/Secrets.swift`
+  into it if missing** (git-ignored).
+- Ledger (source of truth for which task is next): `.superpowers/sdd/2026-08-25-plan-4g-integration-polish/progress.md`
+  — read its Task log; tasks with a `complete` line are DONE; resume at the first task without one. Briefs are
+  pre-generated in that directory (`task-N-brief.md`). Rulings G1–G3 in the ledger (two plan file-path defects) apply.
+- Process per task: implementer subagent → `scripts/review-package` → reviewer → fix loop → ledger `complete` line.
+  Final whole-branch review → fast-forward merge to main → verify merged tree → update this file + roadmap → delete
+  worktree/branch/ledger. (Opus was degraded for final reviews earlier this session; Sonnet worked reliably.)
+- Model note: commits through Plan 4b were Fable 5; Plans 4c–4g so far were Opus 4.8 (see git trailers).
 
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
