@@ -17,12 +17,14 @@ final class LineupViewModel {
     private(set) var heat: Heat?
     var selection: Selection?
     private(set) var canUndo = false
+    private(set) var canRedo = false
     private(set) var isSaving = false
     private(set) var isLoaded = false
 
     private let db: AppDatabase
     private let repo: LineupRepository
     private var undoStack: [Lineup] = []
+    private var redoStack: [Lineup] = []
     private var original: Lineup?   // reference for the `moves` metric
 
     init(db: AppDatabase) { self.db = db; self.repo = LineupRepository(db: db) }
@@ -43,7 +45,7 @@ final class LineupViewModel {
         heat = h
         lineup = req.current ?? Lineup(boat: req.boat, drummerId: req.drummerId, sweepId: req.sweepId)
         original = lineup
-        undoStack = []; canUndo = false; selection = nil
+        undoStack = []; canUndo = false; redoStack = []; canRedo = false; selection = nil
         #if DEBUG
         if ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_AUTOFILL"] == "1" { autoFill() }
         #endif
@@ -83,15 +85,56 @@ final class LineupViewModel {
     func unseat(_ seat: Seat) { mutate { $0.remove(at: seat) }; selection = nil }
 
     func undo() {
-        guard let prev = undoStack.popLast() else { return }
+        guard let prev = undoStack.popLast(), let current = lineup else { return }
+        redoStack.append(current); canRedo = true
         lineup = prev; canUndo = !undoStack.isEmpty; selection = nil
     }
 
-    /// Applies a mutation to `lineup`, snapshotting the prior value for undo.
+    func redo() {
+        guard let next = redoStack.popLast(), let current = lineup else { return }
+        undoStack.append(current); canUndo = true
+        lineup = next; canRedo = !redoStack.isEmpty; selection = nil
+    }
+
+    /// Applies a mutation to `lineup`, snapshotting the prior value for undo
+    /// and clearing the redo stack (a fresh edit invalidates any redo history).
     func mutate(_ change: (inout Lineup) -> Void) {
         guard var l = lineup else { return }
         undoStack.append(l); canUndo = true
+        redoStack.removeAll(); canRedo = false
         change(&l); lineup = l
+    }
+
+    /// Drag-and-drop: a reserve or a seated paddler dropped onto a seat.
+    /// Seated → occupied = swap; seated → empty = move; reserve → any = place
+    /// (an evicted occupant returns to the reserves). All via Lineup.
+    func dragDrop(_ id: PaddlerID, onto seat: Seat) {
+        guard let current = lineup else { return }
+        if let from = current.seat(of: id) {
+            guard from != seat else { return }
+            if current.paddler(at: seat) != nil { mutate { $0.swap(from, seat) } } else { mutate { $0.place(id, at: seat) } }
+        } else {
+            mutate { $0.place(id, at: seat) }
+        }
+        selection = nil
+    }
+
+    func dropOnTray(_ id: PaddlerID) {
+        guard lineup?.seat(of: id) != nil else { return }
+        mutate { $0.remove(id) }; selection = nil
+    }
+
+    func toggleLock(_ seat: Seat) {
+        guard let current = lineup, current.paddler(at: seat) != nil else { return }
+        mutate { $0.setLocked(!current.isLocked(seat), at: seat) }
+    }
+
+    /// Drummer/sweep can't also hold a bench seat; assigning removes them from the hull.
+    func setDrummer(_ id: PaddlerID?) {
+        mutate { l in if let id { l.remove(id); if l.sweepId == id { l.sweepId = nil } }; l.drummerId = id }
+    }
+    func setSweep(_ id: PaddlerID?) {
+        mutate { l in if let id { l.remove(id); if l.drummerId == id { l.drummerId = nil } }; l.sweepId = id }
     }
 
     func save() async {

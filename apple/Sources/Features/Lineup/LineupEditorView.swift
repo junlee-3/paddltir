@@ -1,8 +1,9 @@
 // apple/Sources/Features/Lineup/LineupEditorView.swift
-// The hero screen. Glass heat-switcher header, the solid HullGrid, a glass
+// The hero screen. Glass heat-switcher header, the solid HullGrid (drag & drop,
+// long-press context menu, spring motion + haptics on every change), a glass
 // Balance HUD (beam + telemetry + gender badge) driven by PaddltirCore on every
-// change, a reserves strip, and a glass toolbar (Suggest / Auto-fill / Undo).
-// Optimise (server MIP) is out of scope until the solver is deployed (go-live).
+// change, a drop-target reserves strip, and a glass toolbar (Suggest / Auto-fill /
+// Undo / Redo). Optimise (server MIP) is out of scope until the solver is deployed (go-live).
 import SwiftUI
 import PaddltirCore
 
@@ -44,9 +45,9 @@ struct LineupEditorView: View {
             VStack(spacing: DS.Space.m) {
                 HeatSwitcher(names: [model.heat?.name ?? "Heat"], selection: $heatSelection)   // single heat for now; multi-heat nav is a later pass
 
-                HullGrid(lineup: lineup, roster: roster, selection: model.selection) { seat in
-                    model.tapSeat(seat); Task { await model.save() }
-                }
+                HullGrid(lineup: lineup, roster: roster, selection: model.selection, actions: hullActions(model))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.lineup)
+                    .sensoryFeedback(.impact(weight: .light), trigger: model.lineup)
 
                 if let metrics = model.metrics {
                     GlassBar {
@@ -88,10 +89,31 @@ struct LineupEditorView: View {
                                 .overlay(Capsule().stroke(model.selection == .reserve(id) ? DS.accent : DS.border))
                         }
                         .buttonStyle(.plain)
+                        .draggable(id.rawValue)
                     }
                 }
             }
+            .dropDestination(for: String.self) { items, _ in
+                guard let raw = items.first else { return false }
+                model.dropOnTray(PaddlerID(raw))
+                Task { await model.save() }
+                return true
+            }
         }
+    }
+
+    /// The hull's outbound actions: every one mirrors the tap flow — a VM call
+    /// followed by a save — so drag/drop and the context menu persist exactly
+    /// like the existing tap-to-place/swap interactions.
+    private func hullActions(_ model: LineupViewModel) -> HullActions {
+        HullActions(
+            tap: { seat in model.tapSeat(seat); Task { await model.save() } },
+            drop: { id, seat in model.dragDrop(id, onto: seat); Task { await model.save() } },
+            unseat: { seat in model.unseat(seat); Task { await model.save() } },
+            toggleLock: { seat in model.toggleLock(seat); Task { await model.save() } },
+            setDrummer: { id in model.setDrummer(id); Task { await model.save() } },
+            setSweep: { id in model.setSweep(id); Task { await model.save() } }
+        )
     }
 
     private func toolbar(_ model: LineupViewModel) -> some View {
@@ -102,6 +124,8 @@ struct LineupEditorView: View {
                 toolButton("Auto-fill", "sparkles") { model.autoFill(); Task { await model.save() } }
                 toolButton("Undo", "arrow.uturn.backward") { model.undo(); Task { await model.save() } }
                     .disabled(!model.canUndo)
+                toolButton("Redo", "arrow.uturn.forward") { model.redo(); Task { await model.save() } }
+                    .disabled(!model.canRedo)
             }
             .padding(DS.Space.m)
         }

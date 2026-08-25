@@ -20,6 +20,12 @@ public struct SeatTile: View {
     var fill: Color { gender == .male ? DS.maleFill : DS.femaleFill }
     var stroke: Color { violatesPref ? DS.danger : (gender == .male ? DS.maleBorder : DS.femaleBorder) }
 
+    /// The occupant description shared with anything composing a seat's accessibility
+    /// label (e.g. `HullGrid`'s cell label) — the single source of truth for this string.
+    public static func accessibilityDescription(name: String, gender: Gender, side: String, weightKg: Double, violatesPref: Bool) -> String {
+        "\(name), \(gender == .male ? "male" : "female"), side \(side), \(Int(weightKg.rounded())) kilograms\(violatesPref ? ", side preference not met" : "")"
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(name).font(.dsFootnote.weight(.semibold)).foregroundStyle(DS.ink).lineLimit(1)
@@ -35,6 +41,6 @@ public struct SeatTile: View {
         .scaleEffect(lifted ? 1.05 : 1)
         .shadow(color: .black.opacity(lifted ? 0.28 : 0), radius: 12, y: 6)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(name), \(gender == .male ? "male" : "female"), side \(side), \(Int(weightKg)) kilograms\(violatesPref ? ", side preference not met" : "")")
+        .accessibilityLabel(Self.accessibilityDescription(name: name, gender: gender, side: side, weightKg: weightKg, violatesPref: violatesPref))
     }
 }

@@ -2,7 +2,9 @@
 // The boat hull — a solid, legible grid: Drummer at the bow, `n` bench rows
 // (Left seat | bench# · section | Right seat), Sweep at the stern. Occupied
 // seats render with the 4a SeatTile (gender-coloured); empty seats are tappable
-// slots. The currently-selected seat gets an accent ring.
+// slots. The currently-selected seat gets an accent ring. Every seat accepts a
+// drag-and-drop paddler id and offers a long-press context menu (occupied
+// seats only) for unseat/lock/drummer/sweep.
 import SwiftUI
 import PaddltirCore
 
@@ -10,7 +12,7 @@ struct HullGrid: View {
     let lineup: Lineup
     let roster: Roster
     let selection: LineupViewModel.Selection?
-    let onTapSeat: (Seat) -> Void
+    let actions: HullActions
 
     var body: some View {
         VStack(spacing: DS.Space.xs) {
@@ -41,39 +43,95 @@ struct HullGrid: View {
 
     @ViewBuilder private func seatCell(_ seat: Seat) -> some View {
         let selected = selection == .seat(seat)
-        Button { onTapSeat(seat) } label: {
-            Group {
-                if let pid = lineup.paddler(at: seat), let p = roster.byID[pid] {
-                    SeatTile(name: p.name, side: seat.side == .left ? "L" : "R", weightKg: p.weightKg,
-                             gender: p.gender, violatesPref: !p.side.matches(seat.side))
-                } else {
-                    Text(seat.side == .left ? "L" : "R")
-                        .font(.dsCaption).foregroundStyle(DS.ink3)
-                        .frame(maxWidth: .infinity, minHeight: 40)
-                        .background(DS.surface2, in: .rect(cornerRadius: DS.R.tile))
-                        .overlay(RoundedRectangle(cornerRadius: DS.R.tile).stroke(DS.border, style: .init(dash: [3])))
-                }
-            }
-            .overlay(RoundedRectangle(cornerRadius: DS.R.tile).stroke(DS.accent, lineWidth: selected ? 2 : 0))
+        let pid = lineup.paddler(at: seat)
+        let base = Button { actions.tap(seat) } label: {
+            cellLabel(seat: seat, pid: pid, selected: selected)
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .dropDestination(for: String.self) { items, _ in
+            guard let raw = items.first else { return false }
+            actions.drop(PaddlerID(raw), seat)
+            return true
+        }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(seatAccessibilityLabel(for: seat))
-        .accessibilityHint("Double-tap to select")
+        .accessibilityLabel(accessibilityLabel(for: seat, pid: pid))
+        .accessibilityHint(accessibilityHint(for: seat))
         .accessibilityAddTraits(selected ? .isSelected : [])
+
+        if let pid {
+            base
+                .draggable(pid.rawValue)
+                .contextMenu {
+                    Button("Unseat") { actions.unseat(seat) }
+                    Button(lineup.isLocked(seat) ? "Unlock seat" : "Lock seat") { actions.toggleLock(seat) }
+                    Button("Set as drummer") { actions.setDrummer(pid) }
+                    Button("Set as sweep") { actions.setSweep(pid) }
+                }
+                .accessibilityAction(named: "Unseat") { actions.unseat(seat) }
+                .accessibilityAction(named: lineup.isLocked(seat) ? "Unlock seat" : "Lock seat") { actions.toggleLock(seat) }
+                .accessibilityAction(named: "Set as drummer") { actions.setDrummer(pid) }
+                .accessibilityAction(named: "Set as sweep") { actions.setSweep(pid) }
+        } else {
+            base
+        }
     }
 
-    private func seatAccessibilityLabel(for seat: Seat) -> String {
+    @ViewBuilder private func cellLabel(seat: Seat, pid: PaddlerID?, selected: Bool) -> some View {
+        Group {
+            if let pid, let p = roster.byID[pid] {
+                SeatTile(name: p.name, side: seat.side == .left ? "L" : "R", weightKg: p.weightKg,
+                         gender: p.gender, violatesPref: !p.side.matches(seat.side))
+            } else {
+                Text(seat.side == .left ? "L" : "R")
+                    .font(.dsCaption).foregroundStyle(DS.ink3)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(DS.surface2, in: .rect(cornerRadius: DS.R.tile))
+                    .overlay(RoundedRectangle(cornerRadius: DS.R.tile).stroke(DS.border, style: .init(dash: [3])))
+            }
+        }
+        .overlay(RoundedRectangle(cornerRadius: DS.R.tile).stroke(DS.accent, lineWidth: selected ? 2 : 0))
+        .overlay(alignment: .topTrailing) {
+            if lineup.isLocked(seat) {
+                Image(systemName: "lock.fill")
+                    .font(.dsMicro)
+                    .foregroundStyle(DS.ink3)
+                    .padding(DS.Space.xs)
+            }
+        }
+    }
+
+    /// H9: the occupant description is owned by `SeatTile`; this only adds the
+    /// "Bench N left/right" prefix (occupied) or the empty-seat sentence.
+    private func accessibilityLabel(for seat: Seat, pid: PaddlerID?) -> String {
         let sideWord = seat.side == .left ? "left" : "right"
-        let occupant = lineup.paddler(at: seat)
-        guard let pid = occupant, let p = roster.byID[pid] else {
+        guard let pid, let p = roster.byID[pid] else {
             return "Bench \(seat.bench) \(sideWord), empty"
         }
         let sideLetter = seat.side == .left ? "L" : "R"
-        let genderWord = p.gender == .male ? "male" : "female"
-        let prefNote = p.side.matches(seat.side) ? "" : ", side preference not met"
-        return "Bench \(seat.bench) \(sideWord), \(p.name), \(genderWord), side \(sideLetter), \(Int(p.weightKg)) kilograms\(prefNote)"
+        let description = SeatTile.accessibilityDescription(
+            name: p.name, gender: p.gender, side: sideLetter, weightKg: p.weightKg, violatesPref: !p.side.matches(seat.side))
+        return "Bench \(seat.bench) \(sideWord), \(description)"
+    }
+
+    /// H9(c): the hint depends on what (if anything) is selected relative to this cell.
+    private func accessibilityHint(for seat: Seat) -> String {
+        guard let selection else { return "Double-tap to select" }
+        if case .seat(let s) = selection, s == seat { return "Double-tap to deselect" }
+        if let occupant = lineup.paddler(at: seat), let p = roster.byID[occupant] {
+            return "Double-tap to swap with \(p.name)"
+        }
+        if let name = selectedPaddlerName(selection) {
+            return "Double-tap to move \(name) here"
+        }
+        return "Double-tap to select"
+    }
+
+    private func selectedPaddlerName(_ selection: LineupViewModel.Selection) -> String? {
+        switch selection {
+        case .reserve(let id): return roster.byID[id]?.name
+        case .seat(let s): return lineup.paddler(at: s).flatMap { roster.byID[$0]?.name }
+        }
     }
 
     private func capRow(_ label: String, id: PaddlerID?) -> some View {
