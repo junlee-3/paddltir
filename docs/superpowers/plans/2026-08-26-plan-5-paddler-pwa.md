@@ -108,10 +108,10 @@ vercel.json                                        + web service (Task 6)
 
 ```bash
 cd /Users/junlee/Documents/programming/paddltir
-pnpm dlx create-next-app@latest web --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*" --use-pnpm --turbopack --yes
-cd web && pnpm exec next --version && rm -f public/*.svg && ls app
+pnpm dlx create-next-app@latest web --typescript --tailwind --eslint --app --import-alias "@/*" --use-pnpm --yes
+cd web && pnpm exec next --version && rm -f public/*.svg && ls app && test ! -d src && echo "no src/ dir (expected)"
 ```
-Record the printed Next.js version in your report. If it is 15.x, every later mention of `proxy.ts` means `middleware.ts` (exporting `middleware`).
+(`--yes` takes the defaults for everything not given: no `src/` directory, Turbopack on. Registry check on 2026-08-26: `next` 16.3.2, `tailwindcss` 4.3, `@supabase/ssr` 0.12, `vitest` 4.1 — so the session hook file is `proxy.ts`.) Record the printed Next.js version in your report. If the scaffold produced a `src/` directory anyway, move `app/` up to `web/app/` and delete `src/` before continuing — every path in this plan is `web/app/...`, `web/lib/...`, `web/components/...`.
 
 - [ ] **Step 2: Scripts + Vitest**
 
@@ -395,7 +395,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 # Dev-only password sign-in form on /login. NEVER set on Vercel.
 NEXT_PUBLIC_PADDLTIR_DEV_LOGIN=1
 ```
-Copy it to `web/.env.local` and paste the real local anon key (from `supabase status`) — `.env.local` is git-ignored; confirm with `git status --ignored web/.env.local`.
+Copy it to `web/.env.local` and paste the real local key from `supabase status` — either the legacy `ANON_KEY` JWT or the newer `PUBLISHABLE_KEY` (`sb_publishable_…`) works with supabase-js ≥ 2.100; never the `SECRET_KEY`/`SERVICE_ROLE_KEY`. `.env.local` is git-ignored; confirm with `git status --ignored web/.env.local`.
 
 - [ ] **Step 11: Gate** — `cd web && pnpm typecheck && pnpm lint && pnpm test && pnpm build` — all green.
 
