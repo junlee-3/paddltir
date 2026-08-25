@@ -31,7 +31,7 @@ private struct MainShell: View {
     #if os(iOS)
     #if DEBUG
     // Default-select the Design tab in DEBUG so a launched screenshot lands on the gallery.
-    @State private var selection = 3
+    @State private var selection = 0
     #else
     @State private var selection = 0
     #endif
