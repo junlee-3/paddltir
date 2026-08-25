@@ -48,6 +48,7 @@ struct AuthView: View {
                         .padding(DS.Space.s)
                         .background(DS.surface2, in: RoundedRectangle(cornerRadius: DS.R.ctl))
                         .overlay(RoundedRectangle(cornerRadius: DS.R.ctl).stroke(DS.border))
+                        .onChange(of: email) { magicLinkSent = false }
                 }
                 PrimaryButton(magicLinkSent ? "Link sent — check your email" : "Email me a magic link") {
                     Task { await sendMagicLink() }

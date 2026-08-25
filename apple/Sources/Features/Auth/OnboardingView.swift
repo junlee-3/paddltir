@@ -41,7 +41,7 @@ final class OnboardingViewModel {
     /// by email link with no paddler selected.
     func lookupClaimables() async {
         guard canJoin else { return }
-        await run { claimables = try await clubs.claimablePaddlers(code: normalizedCode()) }
+        await run(finishes: false) { claimables = try await clubs.claimablePaddlers(code: normalizedCode()) }
     }
 
     func join() async {
@@ -49,11 +49,11 @@ final class OnboardingViewModel {
         await run { try await clubs.joinClub(code: normalizedCode(), paddlerId: selectedPaddlerID) }
     }
 
-    private func run(_ work: () async throws -> Void) async {
+    private func run(finishes: Bool = true, _ work: () async throws -> Void) async {
         guard !isBusy else { return }
         isBusy = true; errorText = nil
         defer { isBusy = false }
-        do { try await work(); await onFinished() }
+        do { try await work(); if finishes { await onFinished() } }
         catch { errorText = error.localizedDescription }
     }
 }
