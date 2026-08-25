@@ -75,6 +75,7 @@ struct PaddlerDetailView: View {
     @ViewBuilder private func content(_ model: PaddlerDetailModel, _ pw: PaddlerWithErg) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.m) {
+                if let e = model.lastError { StatusBanner(e) }
                 HairlineCard {
                     VStack(alignment: .leading, spacing: DS.Space.s) {
                         HStack {

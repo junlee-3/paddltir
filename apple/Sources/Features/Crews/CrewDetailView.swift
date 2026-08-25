@@ -84,6 +84,7 @@ struct CrewDetailView: View {
     @ViewBuilder private func content(_ model: CrewDetailModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.m) {
+                if let e = model.lastError { StatusBanner(e) }
                 HairlineCard {
                     HStack {
                         Text("W \(model.tally.women) · M \(model.tally.men)").font(.dsHeadline).foregroundStyle(DS.ink)

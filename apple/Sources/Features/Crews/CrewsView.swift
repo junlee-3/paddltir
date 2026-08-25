@@ -29,7 +29,7 @@ final class CrewsViewModel {
 
     /// One-shot (tests / previews).
     func load() async {
-        do { summaries = try await crews.summaries(now: Date()); isLoaded = true } catch { lastError = error.localizedDescription }
+        do { summaries = try await crews.summaries(now: Date()); isLoaded = true; lastError = nil } catch { lastError = error.localizedDescription }
     }
 
     func createCrew(clubId: String, name: String, division: String, category: CrewCategory) async {
@@ -81,6 +81,7 @@ struct CrewsView: View {
         } else {
             ScrollView {
                 VStack(spacing: DS.Space.m) {
+                    if let e = model.lastError { StatusBanner(e) }
                     if model.summaries.isEmpty {
                         Text("No crews yet — tap + to add one.").font(.dsCaption).foregroundStyle(DS.ink3).padding(.top, DS.Space.xl)
                     }

@@ -44,6 +44,14 @@ struct SquadView: View {
         } else {
             @Bindable var model = model
             List {
+                if let e = model.lastError {
+                    StatusBanner(e)
+                        .padding(.horizontal, DS.Space.l)
+                        .padding(.vertical, DS.Space.xs)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                }
                 Section {
                     Picker("Sort", selection: $model.sort) { ForEach(SquadSort.allCases) { Text($0.label).tag($0) } }
                         .pickerStyle(.segmented)

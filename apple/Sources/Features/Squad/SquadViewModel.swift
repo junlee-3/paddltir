@@ -32,7 +32,7 @@ final class SquadViewModel {
 
     /// One-shot (tests / previews).
     func load() async {
-        do { all = try await squad.paddlers(); isLoaded = true } catch { lastError = error.localizedDescription }
+        do { all = try await squad.paddlers(); isLoaded = true; lastError = nil } catch { lastError = error.localizedDescription }
     }
 
     func add(_ row: PaddlerRow) async {

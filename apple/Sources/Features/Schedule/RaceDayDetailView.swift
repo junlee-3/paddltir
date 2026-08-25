@@ -79,6 +79,7 @@ struct RaceDayDetailView: View {
     @ViewBuilder private func content(_ model: RaceDayModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.m) {
+                if let e = model.lastError { StatusBanner(e) }
                 HairlineCard {
                     Text("\(model.headcount.inCount) in · \(model.headcount.outCount) out · \(model.headcount.maybeCount) maybe · \(model.headcount.noReplyCount) no reply")
                         .font(.dsCallout).foregroundStyle(DS.ink2)

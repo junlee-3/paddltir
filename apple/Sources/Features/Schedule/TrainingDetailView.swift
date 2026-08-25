@@ -86,6 +86,7 @@ struct TrainingDetailView: View {
     @ViewBuilder private func content(_ model: TrainingDetailModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.m) {
+                if let e = model.lastError { StatusBanner(e) }
                 headcountCard(model.headcount)
                 ForEach(model.paddlers, id: \.row.id) { p in
                     availabilityRow(p, status: model.availability[p.row.id]?.status, model: model)

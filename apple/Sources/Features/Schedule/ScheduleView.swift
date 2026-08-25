@@ -57,6 +57,7 @@ struct ScheduleView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.l) {
+                    if let e = model.lastError { StatusBanner(e) }
                     if let up = model.upNext { upNextHero(up) }
                     ForEach(model.upcoming) { section in
                         daySection(section, header: DateFormatting.day(section.day))

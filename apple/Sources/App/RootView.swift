@@ -33,6 +33,7 @@ struct RootView: View {
 /// Design tab exercising the whole design system), and a `NavigationSplitView` on macOS.
 private struct MainShell: View {
     @Environment(AppModel.self) private var app
+    @Environment(AppEnvironment.self) private var environment
 
     #if os(iOS)
     @State private var selection: Int = {
@@ -55,6 +56,7 @@ private struct MainShell: View {
             macDetail
         }
         .tint(DS.accent)
+        .safeAreaInset(edge: .top) { syncBanner }
         #else
         TabView(selection: $selection) {
             ScheduleView(db: app.environment.db)
@@ -76,10 +78,23 @@ private struct MainShell: View {
             #endif
         }
         .tint(DS.accent)
+        .safeAreaInset(edge: .top) { syncBanner }
         #if DEBUG && os(iOS)
         .fullScreenCover(isPresented: $debugOpenHeat) { DebugFirstHeatEditor() }
         #endif
         #endif
+    }
+
+    /// Non-blocking "couldn't sync" strip shown over either platform's shell whenever the
+    /// last `AppEnvironment.sync()` failed. Cached data stays on screen underneath — this
+    /// never gates or replaces content.
+    @ViewBuilder private var syncBanner: some View {
+        if environment.lastSyncError != nil {
+            StatusBanner("Couldn't sync — showing saved data.", actionTitle: "Retry") {
+                Task { await environment.sync() }
+            }
+            .padding(.horizontal, DS.Space.l)
+        }
     }
 
     #if os(macOS)
