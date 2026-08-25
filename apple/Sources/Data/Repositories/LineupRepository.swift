@@ -118,4 +118,28 @@ struct LineupRepository: Sendable {
             )
         }
     }
+
+    /// Adds a heat to a race; `sort_order` is the next free slot.
+    func createHeat(raceId: String, name: String) async throws -> Heat {
+        try db.write { db in
+            let order = try Heat.filter(Column("race_id") == raceId).fetchCount(db)
+            let row = Heat(id: UUID().uuidString, raceId: raceId, name: name, sortOrder: order,
+                           drummerId: nil, sweepId: nil, createdAt: Date(), updatedAt: nil)
+            try row.insert(db)
+            try Outbox.enqueue(db: db, table: Heat.databaseTableName, pk: row.syncPrimaryKey,
+                               op: "insert", payload: try PostgREST.encoder.encode(row))
+            return row
+        }
+    }
+
+    /// Updates a heat's name + drummer/sweep (the lineup editor's non-seat state).
+    func saveHeat(heatId: String, name: String, drummerId: String?, sweepId: String?) async throws {
+        try db.write { db in
+            guard var row = try Heat.fetchOne(db, key: heatId) else { return }
+            row.name = name; row.drummerId = drummerId; row.sweepId = sweepId; row.updatedAt = Date()
+            try row.update(db)
+            try Outbox.enqueue(db: db, table: Heat.databaseTableName, pk: row.syncPrimaryKey,
+                               op: "update", payload: try PostgREST.encoder.encode(row))
+        }
+    }
 }
