@@ -57,6 +57,6 @@ public struct HeatSwitcher: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Heat \(name)")
+        .accessibilityLabel(name)
     }
 }

@@ -38,6 +38,8 @@ struct LineupEditorView: View {
         Group {
             if let lineup = model.lineup, let roster = model.roster, let boat = model.boat {
                 content(model, lineup: lineup, roster: roster, boat: boat)
+            } else if model.isLoaded && model.heats.isEmpty {
+                noHeatsState(model)
             } else if model.isLoaded {
                 ScreenScaffold("Lineup", note: "Couldn't load this race's crew. It may not have synced yet — go back and try again, or check the crew still exists.") {
                     SecondaryButton("Try again") {
@@ -56,6 +58,16 @@ struct LineupEditorView: View {
         #endif
         .background(DS.bg)
         .task { await model.observeHeats(raceId: race.id) }
+    }
+
+    /// F1: a race with no heats (its only one deleted elsewhere) is a legitimate
+    /// state, not an error — the switcher stays visible so "+" still works.
+    @ViewBuilder private func noHeatsState(_ model: LineupViewModel) -> some View {
+        @Bindable var model = model
+        ScreenScaffold("No heats yet", note: "Tap + to add the first heat for this race.") {
+            HeatSwitcher(names: model.heats.map(\.name), selection: $model.selectedHeatIndex,
+                         onAdd: { Task { await model.addHeat(raceId: race.id) } })
+        }
     }
 
     @ViewBuilder private func content(_ model: LineupViewModel, lineup: Lineup, roster: Roster, boat: Boat) -> some View {
@@ -87,14 +99,16 @@ struct LineupEditorView: View {
     }
 
     /// The heat switcher above the hull, shared verbatim between the wide and narrow
-    /// layouts so there is exactly one place that lays out the hull.
+    /// layouts so there is exactly one place that lays out the hull — and, per F3,
+    /// exactly one place that surfaces a `save()`/`load()` failure, as its first element.
     @ViewBuilder private func hullColumn(_ model: LineupViewModel, heatSelection: Binding<Int>, lineup: Lineup, roster: Roster) -> some View {
         VStack(spacing: DS.Space.m) {
+            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.l) }
             HeatSwitcher(names: model.heats.map(\.name), selection: heatSelection,
                          onAdd: { Task { await model.addHeat(raceId: race.id) } })
             HullGrid(lineup: lineup, roster: roster, selection: model.selection, actions: hullActions(model))
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.lineup)
-                .sensoryFeedback(.impact(weight: .light), trigger: model.lineup)
+                .sensoryFeedback(.impact(weight: .light), trigger: model.revision)
         }
     }
 
@@ -146,6 +160,7 @@ struct LineupEditorView: View {
                                 .overlay(Capsule().stroke(model.selection == .reserve(id) ? DS.accent : DS.border))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityAddTraits(model.selection == .reserve(id) ? .isSelected : [])
                         .draggable(id.rawValue)
                     }
                 }
@@ -169,7 +184,9 @@ struct LineupEditorView: View {
             unseat: { seat in model.unseat(seat); Task { await model.save() } },
             toggleLock: { seat in model.toggleLock(seat); Task { await model.save() } },
             setDrummer: { id in model.setDrummer(id); Task { await model.save() } },
-            setSweep: { id in model.setSweep(id); Task { await model.save() } }
+            setSweep: { id in model.setSweep(id); Task { await model.save() } },
+            clearDrummer: { model.setDrummer(nil); Task { await model.save() } },
+            clearSweep: { model.setSweep(nil); Task { await model.save() } }
         )
     }
 

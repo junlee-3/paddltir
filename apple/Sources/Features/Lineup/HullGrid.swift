@@ -16,7 +16,7 @@ struct HullGrid: View {
 
     var body: some View {
         VStack(spacing: DS.Space.xs) {
-            capRow("Drummer", id: lineup.drummerId)
+            capRow("Drummer", id: lineup.drummerId, clear: actions.clearDrummer, setRole: actions.setDrummer)
             ForEach(lineup.boat.benchRange, id: \.self) { bench in
                 HStack(spacing: DS.Space.xs) {
                     seatCell(Seat(bench: bench, side: .left))
@@ -30,7 +30,7 @@ struct HullGrid: View {
                 .padding(.vertical, DS.Space.xs)
                 .background(sectionFill(bench), in: .rect(cornerRadius: DS.R.sm))
             }
-            capRow("Sweep", id: lineup.sweepId)
+            capRow("Sweep", id: lineup.sweepId, clear: actions.clearSweep, setRole: actions.setSweep)
         }
         .padding(DS.Space.m)
         .background(DS.surface, in: .rect(cornerRadius: DS.R.card))
@@ -127,7 +127,10 @@ struct HullGrid: View {
     }
 
     /// H9(c): the hint depends on what (if anything) is selected relative to this cell.
+    /// F6: a locked seat always reads as locked — it can't be a tap/drag/swap target,
+    /// so no other hint (deselect, swap, move-here) ever applies to it.
     private func accessibilityHint(for seat: Seat) -> String {
+        guard !lineup.isLocked(seat) else { return "Locked — unlock to change" }
         guard let selection else { return "Double-tap to select" }
         if case .seat(let s) = selection, s == seat { return "Double-tap to deselect" }
         if let occupant = lineup.paddler(at: seat), let p = roster.byID[occupant] {
@@ -146,14 +149,36 @@ struct HullGrid: View {
         }
     }
 
-    private func capRow(_ label: String, id: PaddlerID?) -> some View {
-        HStack {
+    /// Drummer/Sweep row. F4: a drop here calls `setRole` with the dropped id
+    /// (validated in the VM, same as every other drop); an occupied row offers a
+    /// single "Clear <role>" action (context menu + matching accessibility
+    /// action) — clearing and "move to reserves" are the same outcome, so there's
+    /// only the one button.
+    @ViewBuilder private func capRow(_ label: String, id: PaddlerID?, clear: @escaping () -> Void, setRole: @escaping (PaddlerID) -> Void) -> some View {
+        let name = id.flatMap { roster.byID[$0]?.name }
+        let base = HStack {
             MicroLabel(label)
             Spacer()
-            Text(id.flatMap { roster.byID[$0]?.name } ?? "—").font(.dsCaption).foregroundStyle(DS.ink2)
+            Text(name ?? "—").font(.dsCaption).foregroundStyle(DS.ink2)
         }
         .padding(.horizontal, DS.Space.s).padding(.vertical, DS.Space.xs)
         .frame(maxWidth: .infinity)
         .background(DS.surface2, in: .rect(cornerRadius: DS.R.sm))
+        .dropDestination(for: String.self) { items, _ in
+            guard let raw = items.first else { return false }
+            setRole(PaddlerID(raw))
+            return true
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(name.map { "\(label), \($0)" } ?? "\(label), empty")
+
+        if id != nil {
+            let clearTitle = "Clear \(label.lowercased())"
+            base
+                .contextMenu { Button(clearTitle) { clear() } }
+                .accessibilityAction(named: clearTitle) { clear() }
+        } else {
+            base
+        }
     }
 }

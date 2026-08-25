@@ -32,4 +32,20 @@ import Testing
         for _ in 0..<50 where vm.upNext == nil { try await Task.sleep(for: .milliseconds(40)) }
         #expect(vm.upNext?.title == "New paddle")
     }
+
+    /// F2: a failed first emission must still stop the spinner — `isLoaded` and
+    /// `lastError` both flip, so the view leaves `ProgressView()` for its loaded
+    /// (empty-with-banner) branch instead of spinning forever. Forced here by
+    /// closing the underlying `DatabaseQueue` before `observe()` ever runs, so its
+    /// very first read throws.
+    @Test func squadViewModelSurfacesAFailedFirstEmission() async throws {
+        let db = try AppDatabase.inMemory()
+        try db.dbQueue.close()
+        let vm = SquadViewModel(db: db)
+        let task = Task { await vm.observe() }
+        defer { task.cancel() }
+        for _ in 0..<50 where !(vm.isLoaded && vm.lastError != nil) { try await Task.sleep(for: .milliseconds(40)) }
+        #expect(vm.isLoaded)
+        #expect(vm.lastError != nil)
+    }
 }

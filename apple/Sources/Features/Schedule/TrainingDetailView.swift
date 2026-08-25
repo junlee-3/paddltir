@@ -32,7 +32,10 @@ final class TrainingDetailModel {
     /// Long-lived: run from the view's `.task`. Every DB change re-emits.
     func observe() async {
         do { for try await detail in schedule.observeTrainingDetail(sessionId: session.id).values(in: db.dbQueue) { apply(detail) } }
-        catch { lastError = error.localizedDescription }
+        catch {
+            lastError = error.localizedDescription
+            isLoaded = true
+        }
     }
 
     private func apply(_ d: ScheduleRepository.TrainingDetail) {

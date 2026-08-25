@@ -137,16 +137,40 @@ struct LineupRepository: Sendable {
         }
     }
 
-    /// Adds a heat to a race; `sort_order` is the next free slot.
+    /// Inserts one heat row and enqueues its outbox entry, in the caller's write
+    /// transaction — the single write+enqueue shape shared by every heat-creating
+    /// path (`createHeat`, both overloads, and `ScheduleRepository.createRace`'s
+    /// race-birth heat) so none of them can drift from the others.
+    static func insertHeat(_ db: Database, raceId: String, name: String, sortOrder: Int) throws -> Heat {
+        let row = Heat(id: UUID().uuidString, raceId: raceId, name: name, sortOrder: sortOrder,
+                       drummerId: nil, sweepId: nil, createdAt: Date(), updatedAt: nil)
+        try row.insert(db)
+        try Outbox.enqueue(db: db, table: Heat.databaseTableName, pk: row.syncPrimaryKey,
+                           op: "insert", payload: try PostgREST.encoder.encode(row))
+        return row
+    }
+
+    /// Adds a named heat to a race; `sort_order` is the next free slot (a plain
+    /// count, 0-based). Used by tests and by `ScheduleRepository.createRace`'s
+    /// race-birth heat (via `insertHeat` directly, not this overload — that one
+    /// needs `sort_order == 1` regardless of count). The editor's own "add
+    /// another heat" affordance uses the no-name overload below instead.
     func createHeat(raceId: String, name: String) async throws -> Heat {
         try db.write { db in
             let order = try Heat.filter(Column("race_id") == raceId).fetchCount(db)
-            let row = Heat(id: UUID().uuidString, raceId: raceId, name: name, sortOrder: order,
-                           drummerId: nil, sweepId: nil, createdAt: Date(), updatedAt: nil)
-            try row.insert(db)
-            try Outbox.enqueue(db: db, table: Heat.databaseTableName, pk: row.syncPrimaryKey,
-                               op: "insert", payload: try PostgREST.encoder.encode(row))
-            return row
+            return try Self.insertHeat(db, raceId: raceId, name: name, sortOrder: order)
+        }
+    }
+
+    /// Adds a heat to a race with an auto-generated "Heat N" name; `sort_order`
+    /// is the current max + 1, computed inside the write transaction so two fast
+    /// taps can never collide on the same order (unlike a plain count, which
+    /// would collide with the race-birth heat's `sort_order == 1`).
+    func createHeat(raceId: String) async throws -> Heat {
+        try db.write { db in
+            let existing = try Heat.filter(Column("race_id") == raceId).fetchAll(db)
+            let sortOrder = (existing.map(\.sortOrder).max() ?? 0) + 1
+            return try Self.insertHeat(db, raceId: raceId, name: "Heat \(sortOrder)", sortOrder: sortOrder)
         }
     }
 

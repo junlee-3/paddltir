@@ -24,7 +24,10 @@ final class CrewsViewModel {
     func observe() async {
         do {
             for try await rows in crews.observeSummaries(now: Date()).values(in: db.dbQueue) { summaries = rows; isLoaded = true; lastError = nil }
-        } catch { lastError = error.localizedDescription }
+        } catch {
+            lastError = error.localizedDescription
+            isLoaded = true
+        }
     }
 
     /// One-shot (tests / previews).

@@ -1,9 +1,9 @@
 import SwiftUI
 import PaddltirCore
 
-/// CrewCoach seat tile — gender-coloured fill/border, name + side letter + weight.
-/// `violatesPref` overrides the border with `DS.danger`; `lifted` scales up with a drop shadow
-/// (used while a tile is being dragged in the CrewCoach board).
+/// Paddltir seat tile — gender-coloured fill/border, name + side letter + weight (the visual
+/// design is carried from the original CrewCoach board). `violatesPref` overrides the border
+/// with `DS.danger`; `lifted` scales up with a drop shadow (used while a tile is being dragged).
 public struct SeatTile: View {
     let name: String
     let side: String

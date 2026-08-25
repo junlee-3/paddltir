@@ -9,4 +9,6 @@ struct HullActions {
     var toggleLock: (Seat) -> Void
     var setDrummer: (PaddlerID) -> Void
     var setSweep: (PaddlerID) -> Void
+    var clearDrummer: () -> Void
+    var clearSweep: () -> Void
 }

@@ -21,7 +21,10 @@ final class PaddlerDetailModel {
     /// Long-lived: run from the view's `.task`. Every DB change re-emits.
     func observe() async {
         do { for try await detail in squad.observePaddlerDetail(id: paddlerId).values(in: db.dbQueue) { apply(detail) } }
-        catch { lastError = error.localizedDescription }
+        catch {
+            lastError = error.localizedDescription
+            isLoaded = true
+        }
     }
 
     private func apply(_ d: SquadRepository.PaddlerDetail) {

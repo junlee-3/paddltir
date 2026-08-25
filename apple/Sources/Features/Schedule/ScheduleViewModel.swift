@@ -30,7 +30,10 @@ final class ScheduleViewModel {
     func observe() async {
         do {
             for try await snapshot in schedule.observeSchedule().values(in: db.dbQueue) { apply(snapshot) }
-        } catch { lastError = error.localizedDescription }   // keep the last good state
+        } catch {
+            lastError = error.localizedDescription   // keep the last good state
+            isLoaded = true   // …but stop spinning: the banner is how the failure surfaces
+        }
     }
 
     /// One-shot (tests / previews).

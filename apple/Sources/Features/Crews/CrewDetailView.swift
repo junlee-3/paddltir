@@ -29,7 +29,10 @@ final class CrewDetailModel {
     /// Long-lived: run from the view's `.task`. Every DB change re-emits.
     func observe() async {
         do { for try await detail in crews.observeCrewDetail(id: crewId).values(in: db.dbQueue) { apply(detail) } }
-        catch { lastError = error.localizedDescription }
+        catch {
+            lastError = error.localizedDescription
+            isLoaded = true
+        }
     }
 
     /// One-shot (tests / previews). `CrewGenderRuleTests` calls this directly.

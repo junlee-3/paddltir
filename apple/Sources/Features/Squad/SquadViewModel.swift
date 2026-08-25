@@ -27,7 +27,10 @@ final class SquadViewModel {
     func observe() async {
         do {
             for try await rows in squad.observePaddlers().values(in: db.dbQueue) { all = rows; isLoaded = true; lastError = nil }
-        } catch { lastError = error.localizedDescription }
+        } catch {
+            lastError = error.localizedDescription
+            isLoaded = true
+        }
     }
 
     /// One-shot (tests / previews).

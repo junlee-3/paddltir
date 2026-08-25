@@ -1,8 +1,9 @@
 // apple/Sources/Features/Schedule/RaceDayDetailView.swift
 // Race-day detail: the day's headcount summary, the list of races (crew ·
 // boat size · distance), and `+ Race`. Tapping a race pushes the lineup
-// editor for it, which resolves/auto-creates the race's heats itself
-// (`LineupViewModel.observeHeats(raceId:)`).
+// editor for it; a race is born with its first heat
+// (`ScheduleRepository.createRace`), so the editor's own observation
+// (`LineupViewModel.observeHeats(raceId:)`) just mirrors the race's heats.
 import SwiftUI
 
 @MainActor @Observable
@@ -26,7 +27,10 @@ final class RaceDayModel {
     /// Long-lived: run from the view's `.task`. Every DB change re-emits.
     func observe() async {
         do { for try await snap in schedule.observeRaceDay(sessionId: session.id).values(in: db.dbQueue) { apply(snap) } }
-        catch { lastError = error.localizedDescription }
+        catch {
+            lastError = error.localizedDescription
+            isLoaded = true
+        }
     }
 
     private func apply(_ s: ScheduleRepository.RaceDaySnapshot) {

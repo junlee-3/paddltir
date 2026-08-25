@@ -152,6 +152,10 @@ struct ScheduleRepository: Sendable {
     }
 
     /// Adds a race to a race-day session; `sort_order` is the next free slot.
+    /// Also creates the race's first heat ("Heat 1", `sort_order == 1`) in the
+    /// same transaction — a race is never without a heat, so the lineup editor's
+    /// live observation never has to (and no longer does) create one itself; see
+    /// `LineupRepository.insertHeat` for the shared write+outbox shape.
     func createRace(sessionId: String, crewId: String, name: String,
                     boatSize: BoatSize, distanceM: Int?) async throws -> Race {
         try db.write { db in
@@ -162,6 +166,7 @@ struct ScheduleRepository: Sendable {
             try row.insert(db)
             try Outbox.enqueue(db: db, table: Race.databaseTableName, pk: row.syncPrimaryKey,
                                op: "insert", payload: try PostgREST.encoder.encode(row))
+            _ = try LineupRepository.insertHeat(db, raceId: row.id, name: "Heat 1", sortOrder: 1)
             return row
         }
     }
