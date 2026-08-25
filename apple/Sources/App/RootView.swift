@@ -21,6 +21,7 @@ struct RootView: View {
         case .ready:
             MainShell()
                 .task { await environment.sync() }
+                .task { await environment.observeClub() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { Task { await environment.sync() } }
                 }

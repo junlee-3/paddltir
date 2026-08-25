@@ -43,9 +43,6 @@ struct ScheduleView: View {
             if model == nil { model = ScheduleViewModel(db: app.environment.db) }
             await model?.load()
         }
-        .onChange(of: app.environment.syncGeneration) {
-            Task { await model?.load() }
-        }
     }
 
     @ViewBuilder private func content(_ model: ScheduleViewModel) -> some View {

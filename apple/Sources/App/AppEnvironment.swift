@@ -15,6 +15,7 @@
 // offline-first app), and the next successful sync self-heals it.
 
 import Foundation
+import GRDB
 import Observation
 import Supabase
 
@@ -32,10 +33,9 @@ final class AppEnvironment {
     /// on the next successful sync. Non-fatal; see file header.
     private(set) var lastSyncError: (any Error)?
 
-    /// Bumped after each successful sync so views that loaded from a
-    /// then-empty cache can reload once pulled data lands. (The feature
-    /// screens load once via `.task`; they observe this to refresh.)
-    private(set) var syncGeneration = 0
+    /// The single club this install mirrors (nil until onboarding/sync lands
+    /// a `clubs` row). Observed from GRDB so it's always current.
+    private(set) var clubId: String?
 
     init(client: SupabaseClient, db: AppDatabase) {
         self.client = client
@@ -55,9 +55,17 @@ final class AppEnvironment {
         do {
             try await syncEngine.syncAll()
             lastSyncError = nil
-            syncGeneration += 1
         } catch {
             lastSyncError = error
         }
+    }
+
+    /// Long-lived: keeps `clubId` in step with the local `clubs` row. Run from
+    /// RootView's `.task` — SwiftUI cancels it with the view.
+    func observeClub() async {
+        let observation = ValueObservation.tracking { db in try Club.fetchOne(db)?.id }
+        do {
+            for try await id in observation.values(in: db.dbQueue) { clubId = id }
+        } catch { /* keep the last known club id */ }
     }
 }

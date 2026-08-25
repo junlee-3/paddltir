@@ -45,9 +45,6 @@ struct CrewsView: View {
             if model == nil { model = CrewsViewModel(db: app.environment.db) }
             await model?.load()
         }
-        .onChange(of: app.environment.syncGeneration) {
-            Task { await model?.load() }
-        }
     }
 
     @ViewBuilder private func content(_ model: CrewsViewModel) -> some View {
