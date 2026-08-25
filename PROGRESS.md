@@ -10,9 +10,9 @@
 - Plan 5: `docs/superpowers/plans/2026-08-26-plan-5-paddler-pwa.md` (6 tasks). Worktree: `.worktrees/plan-5-pwa` (branch `plan-5-pwa`, from
   main after b809334). Ledger = source of truth: `.superpowers/sdd/2026-08-26-plan-5-paddler-pwa/progress.md` (pre-flight rulings P1–P4 at the top;
   resume at the first task without a `complete` line; a "dispatched" line with no result = the subagent died → re-dispatch from `task-N-brief.md`).
-- **Progress 2026-08-26 ~05:45:** Plan 5 Tasks 1–2 COMPLETE (c40711a scaffold; 7eb0daa+7f3e49a+46555f1 SSR auth/join/gate — 2 fix rounds:
-  query errors surfaced (P6), error boundaries `retry()` (P8); 25 vitest; auth + join verified live). Task 3 (next event, boat diagram,
-  realtime) in progress. Branch `plan-5-pwa` pushed.
+- **Progress 2026-08-26 ~06:40:** Plan 5 Tasks 1–3 COMPLETE (c40711a scaffold; 7eb0daa/7f3e49a/46555f1 SSR auth+join+gate; 1426ee4 next event —
+  boat diagram with your seat, heat switcher, availability toggle, realtime refresh + publication migration/pgTAP 007). 34 vitest, pgTAP 100/100,
+  realtime event verified live. Task 4 (/availability, /erg, /profile) in progress. Branch `plan-5-pwa` pushed.
 - Local stack must be up (`supabase status`) with `seed_dev.sql` loaded; `web/.env.local` from `web/.env.example` (never commit it).
 - Process per task: implementer → `scripts/review-package` → reviewer → fix loop → ledger `complete`. Final whole-branch review (fable) → ONE fix wave →
   scoped re-review → merge (regular merge commit) → verify merged tree → docs → cleanup.
