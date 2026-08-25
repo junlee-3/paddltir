@@ -32,6 +32,8 @@ struct RootView: View {
 /// App navigation shell — a `TabView` on iOS (Schedule / Crews / Squad, plus a DEBUG-only
 /// Design tab exercising the whole design system), and a `NavigationSplitView` on macOS.
 private struct MainShell: View {
+    @Environment(AppModel.self) private var app
+
     #if os(iOS)
     @State private var selection: Int = {
         #if DEBUG
@@ -55,13 +57,13 @@ private struct MainShell: View {
         .tint(DS.accent)
         #else
         TabView(selection: $selection) {
-            ScheduleView()
+            ScheduleView(db: app.environment.db)
                 .tabItem { Label("Schedule", systemImage: "calendar") }
                 .tag(0)
-            CrewsView()
+            CrewsView(db: app.environment.db)
                 .tabItem { Label("Crews", systemImage: "figure.water.fitness") }
                 .tag(1)
-            SquadView()
+            SquadView(db: app.environment.db)
                 .tabItem { Label("Squad", systemImage: "person.3") }
                 .tag(2)
             SettingsView()
@@ -85,9 +87,9 @@ private struct MainShell: View {
 
     @ViewBuilder private var macDetail: some View {
         switch macSelection ?? .schedule {
-        case .schedule: ScheduleView()
-        case .crews: CrewsView()
-        case .squad: SquadView()
+        case .schedule: ScheduleView(db: app.environment.db)
+        case .crews: CrewsView(db: app.environment.db)
+        case .squad: SquadView(db: app.environment.db)
         case .settings: SettingsView()
         }
     }

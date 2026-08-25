@@ -10,62 +10,72 @@ extension SessionKind: Identifiable { var id: String { rawValue } }
 
 struct ScheduleView: View {
     @Environment(AppModel.self) private var app
-    @State private var model: ScheduleViewModel?
+    @State private var model: ScheduleViewModel
     @State private var newSessionKind: SessionKind?
+
+    init(db: AppDatabase) { _model = State(initialValue: ScheduleViewModel(db: db)) }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if let model { content(model) } else { ProgressView() }
-            }
-            .navigationTitle("Schedule")
-            .background(DS.bg)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button("Training session") { newSessionKind = .training }
-                        Button("Race day") { newSessionKind = .raceDay }
-                    } label: { Image(systemName: "plus") }
-                }
-            }
-            .sheet(item: $newSessionKind) { kind in
-                SessionFormView(kind: kind) { title, startsAt, venue, notes in
-                    if kind == .training { await model?.createTraining(title: title, startsAt: startsAt, venue: venue, notes: notes) }
-                    else { await model?.createRaceDay(title: title, startsAt: startsAt, venue: venue, notes: notes) }
-                }
-            }
-            .navigationDestination(for: SessionRow.self) { session in
-                if session.kind == .training { TrainingDetailView(session: session) }
-                else { RaceDayDetailView(session: session) }
-            }
-        }
-        .task {
-            if model == nil { model = ScheduleViewModel(db: app.environment.db) }
-            await model?.load()
-        }
-    }
-
-    @ViewBuilder private func content(_ model: ScheduleViewModel) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.l) {
-                if let up = model.upNext { upNextHero(up, model: model) }
-                ForEach(model.upcoming) { section in
-                    daySection(section, header: DateFormatting.day(section.day), model: model)
-                }
-                if !model.past.isEmpty {
-                    DisclosureGroup("Past") {
-                        ForEach(model.past) { section in
-                            daySection(section, header: DateFormatting.day(section.day), model: model)
-                        }
+            content
+                .navigationTitle("Schedule")
+                .background(DS.bg)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            Button("Training session") { newSessionKind = .training }
+                            Button("Race day") { newSessionKind = .raceDay }
+                        } label: { Image(systemName: "plus") }
+                            .disabled(app.environment.clubId == nil)
                     }
-                    .font(.dsSubhead).foregroundStyle(DS.ink2).padding(.top, DS.Space.m)
                 }
+                .sheet(item: $newSessionKind) { kind in
+                    if let clubId = app.environment.clubId {
+                        SessionFormView(kind: kind) { title, startsAt, venue, notes in
+                            if kind == .training { await model.createTraining(clubId: clubId, title: title, startsAt: startsAt, venue: venue, notes: notes) }
+                            else { await model.createRaceDay(clubId: clubId, title: title, startsAt: startsAt, venue: venue, notes: notes) }
+                        }
+                    } else {
+                        VStack(spacing: DS.Space.m) {
+                            Text("No club yet").font(.dsBody).foregroundStyle(DS.ink2)
+                            Button("Close") { newSessionKind = nil }.keyboardShortcut(.cancelAction)
+                        }
+                        .padding(DS.Space.l)
+                    }
+                }
+                .navigationDestination(for: SessionRow.self) { session in
+                    if session.kind == .training { TrainingDetailView(session: session) }
+                    else { RaceDayDetailView(session: session) }
+                }
+        }
+        .task { await model.observe() }
+    }
+
+    @ViewBuilder private var content: some View {
+        if !model.isLoaded {
+            ProgressView()
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.l) {
+                    if let up = model.upNext { upNextHero(up) }
+                    ForEach(model.upcoming) { section in
+                        daySection(section, header: DateFormatting.day(section.day))
+                    }
+                    if !model.past.isEmpty {
+                        DisclosureGroup("Past") {
+                            ForEach(model.past) { section in
+                                daySection(section, header: DateFormatting.day(section.day))
+                            }
+                        }
+                        .font(.dsSubhead).foregroundStyle(DS.ink2).padding(.top, DS.Space.m)
+                    }
+                }
+                .padding(DS.Space.l)
             }
-            .padding(DS.Space.l)
         }
     }
 
-    private func upNextHero(_ session: SessionRow, model: ScheduleViewModel) -> some View {
+    private func upNextHero(_ session: SessionRow) -> some View {
         NavigationLink(value: session) {
             GlassContainer {
                 VStack(alignment: .leading, spacing: DS.Space.s) {
@@ -86,7 +96,7 @@ struct ScheduleView: View {
         .buttonStyle(.plain)
     }
 
-    private func daySection(_ section: DaySection, header: String, model: ScheduleViewModel) -> some View {
+    private func daySection(_ section: DaySection, header: String) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s) {
             MicroLabel(header.uppercased())
             ForEach(section.sessions, id: \.id) { session in
