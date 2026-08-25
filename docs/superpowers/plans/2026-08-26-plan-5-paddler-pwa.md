@@ -1081,7 +1081,7 @@ describe("toRaceViews", () => {
 `web/lib/time.test.ts`:
 ```ts
 import { describe, expect, it } from "vitest";
-import { formatSessionDate, formatSessionTime, relativeDay } from "./time";
+import { formatSessionDate, formatSessionTime, relativeDay, startOfTodayISO } from "./time";
 
 const iso = "2026-09-04T08:00:00+10:00"; // Fri 4 Sep 2026, 08:00 Sydney
 
@@ -1094,6 +1094,15 @@ describe("time (club time zone = Australia/Sydney)", () => {
     expect(relativeDay(iso, "2026-09-04T01:00:00+10:00")).toBe("Today");
     expect(relativeDay(iso, "2026-09-03T23:00:00+10:00")).toBe("Tomorrow");
     expect(relativeDay(iso, "2026-08-26T09:00:00+10:00")).toBe("In 9 days");
+    expect(relativeDay("2026-09-05T00:10:00+10:00", "2026-09-04T23:59:00+10:00")).toBe("Tomorrow"); // Sydney midnight
+    expect(relativeDay("2026-10-04T06:00:00+11:00", "2026-10-03T23:30:00+10:00")).toBe("Tomorrow"); // DST switch
+  });
+  it("startOfTodayISO is the exact local midnight, including DST transition days (W10)", () => {
+    const at = (s: string) => Date.parse(startOfTodayISO(s));
+    expect(at("2026-09-04T23:30:00+10:00")).toBe(Date.parse("2026-09-04T00:00:00+10:00"));
+    expect(at("2026-09-04T13:59:00Z")).toBe(Date.parse("2026-09-04T00:00:00+10:00"));
+    expect(at("2026-10-04T06:00:00+11:00")).toBe(Date.parse("2026-10-04T00:00:00+10:00")); // DST starts 02:00 that day
+    expect(at("2027-04-04T12:00:00+10:00")).toBe(Date.parse("2027-04-04T00:00:00+11:00")); // DST ends 03:00 that day
   });
 });
 ```
@@ -1210,6 +1219,22 @@ export function formatSessionDate(iso: string): string {
 export function formatSessionTime(iso: string): string {
   const p = time.formatToParts(new Date(iso));
   return `${part(p, "hour")}:${part(p, "minute")} ${part(p, "dayPeriod").toLowerCase()}`;
+}
+
+/** Ruling W3/W10: the exact local midnight of `now`'s CLUB_TZ calendar day (correct on both DST transition days —
+ *  Sydney changes clocks at 02:00/03:00, so midnight keeps the *previous* offset). Searched over integer UTC hour
+ *  offsets rather than hard-coding +10/+11. Used to anchor the "upcoming" query so a race day stays on `/` all day. */
+const hm = new Intl.DateTimeFormat("en-CA", { timeZone: CLUB_TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+export function startOfTodayISO(nowISO: string): string {
+  const day = ymd.format(new Date(nowISO)); // YYYY-MM-DD in CLUB_TZ
+  const [y, m, d] = day.split("-").map(Number);
+  for (let h = -14; h <= 14; h++) {
+    const candidate = new Date(Date.UTC(y, m - 1, d, h));
+    const parts = hm.formatToParts(candidate);
+    const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((x) => x.type === t)?.value;
+    if (`${get("year")}-${get("month")}-${get("day")}` === day && get("hour") === "00" && get("minute") === "00") return candidate.toISOString();
+  }
+  throw new Error(`startOfTodayISO: no midnight found for ${day} in ${CLUB_TZ}`);
 }
 
 export function relativeDay(iso: string, nowISO: string): string {
