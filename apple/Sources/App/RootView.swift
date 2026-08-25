@@ -48,7 +48,7 @@ private struct MainShell: View {
             CrewsPlaceholder()
                 .tabItem { Label("Crews", systemImage: "figure.water.fitness") }
                 .tag(1)
-            SquadPlaceholder()
+            SquadView()
                 .tabItem { Label("Squad", systemImage: "person.3") }
                 .tag(2)
             SettingsView()
@@ -71,7 +71,7 @@ private struct MainShell: View {
         switch macSelection ?? .schedule {
         case .schedule: ScheduleView()
         case .crews: CrewsPlaceholder()
-        case .squad: SquadPlaceholder()
+        case .squad: SquadView()
         case .settings: SettingsView()
         }
     }
