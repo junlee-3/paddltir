@@ -4,23 +4,39 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**PLAN 4h (quality pass) MERGED — main b809334. NOW EXECUTING Plan 5 (paddler PWA, `web/`) via subagent-driven-development. STOP before go-live (hosted Supabase + Vercel need Jun's credentials).**
+**PLANS 4 (coach app), 4h (quality pass) AND 5 (paddler PWA) MERGED — main 243b6c3. NEXT: GO-LIVE (Plan 6) — needs Jun's Supabase + Vercel credentials; STOPPED here on purpose.**
 
-**RESUME HERE (overnight autonomous run, 2026-08-26 — Fable 5):**
-- Plan 5: `docs/superpowers/plans/2026-08-26-plan-5-paddler-pwa.md` (6 tasks). Worktree: `.worktrees/plan-5-pwa` (branch `plan-5-pwa`, from
-  main after b809334). Ledger = source of truth: `.superpowers/sdd/2026-08-26-plan-5-paddler-pwa/progress.md` (pre-flight rulings P1–P4 at the top;
-  resume at the first task without a `complete` line; a "dispatched" line with no result = the subagent died → re-dispatch from `task-N-brief.md`).
-- **Progress 2026-08-26 ~07:50:** Plan 5 Tasks 1–5 COMPLETE (c40711a scaffold · 7eb0daa/7f3e49a/46555f1 auth+join+gate · 1426ee4 next event +
-  realtime · a582823 availability/erg/profile · 520e992 installable PWA). 41 vitest, pgTAP 100/100, every screen curl-verified, prod-build
-  manifest/SW/offline verified. Task 6 (Playwright smoke vs local stack, vercel.json web service, README) in progress → then final review (fable),
-  merge, docs, STOP before go-live. Branch `plan-5-pwa` pushed.
-- Local stack must be up (`supabase status`) with `seed_dev.sql` loaded; `web/.env.local` from `web/.env.example` (never commit it).
-- Process per task: implementer → `scripts/review-package` → reviewer → fix loop → ledger `complete`. Final whole-branch review (fable) → ONE fix wave →
-  scoped re-review → merge (regular merge commit) → verify merged tree → docs → cleanup.
-- Model note: through 4b = Fable 5; 4c–4g T1–5 = Opus 4.8; 4g wrap-up, 4h and Plan 5 = Fable 5 controller with Sonnet implementers/reviewers
-  and Fable final reviews (see git trailers).
+**RESUME HERE (after the 2026-08-26 overnight autonomous run — Fable 5):**
+- Everything up to and including Plan 5 is on `main` and pushed. No worktrees or feature branches remain. The local Supabase stack is up
+  (reset to the merged migrations, pgTAP green, demo seed loaded).
+- **Go-live checklist (Jun):** see `docs/superpowers/plans/2026-08-26-plan-5-execution-ledger.md` § "Go-live checklist" (hosted Supabase
+  ap-southeast-2: `supabase link` + `db push`, Auth redirect URLs + SMTP; Vercel project with services `web` + `solver` and the three
+  `NEXT_PUBLIC_*` env vars — never `NEXT_PUBLIC_PADDLTIR_DEV_LOGIN`; swap the coach app's `Secrets.swift` to hosted; smoke on hosted).
+- Deferred lists per plan live under each MERGED bullet below. Model note: through 4b = Fable 5; 4c–4g T1–5 = Opus 4.8; 4g wrap-up, 4h and
+  Plan 5 = Fable 5 controller with Sonnet implementers/reviewers and Fable final reviews (see git trailers).
 
 MERGED TO MAIN:
+- **Plan 5 — Paddler PWA `web/` (merge 243b6c3; branch head d8bf369; 11 commits).** Next.js 16.3 App Router + `@supabase/ssr` 0.12,
+  Tailwind v4 `@theme` tokens carrying the product palette, Inter Tight, pnpm. Routes: `/login` (magic link + dev-only password form gated
+  by `NEXT_PUBLIC_PADDLTIR_DEV_LOGIN`) · `/join` (invite code → `claimable_paddlers` → `join_club`) · `/` next event (+ `/session/[id]`):
+  race → boat diagram with YOUR seat accented, full lineup by name via `paddlers_public` (no gender/weight of others — privacy is a data
+  fact), heat tabs, reserves; training → one-tap availability (optimistic, RLS upsert) · `/availability` · `/erg` (self erg log, history,
+  SVG sparkline) · `/profile` (display name; read-only paddler row; sign out). Realtime: `postgres_changes` on
+  sessions/heats/seats/heat_reserves/availability → debounced `router.refresh()`; migration `20260826000600_realtime.sql` + pgTAP `007`.
+  Installable: `manifest.ts`, generated icons, app-shell service worker (cross-origin never cached; offline fallback), one-time
+  add-to-home-screen nudge. Auth boundary: `proxy.ts` session refresh + `getUser()`, `safeNext` open-redirect guard (backslash AND
+  dot-segment `//host` classes), `getViewer()` surfaces query errors (P6) with `retry()` error boundaries (P8). Tests: **60 Vitest**;
+  Playwright smoke vs the local stack (`PADDLTIR_LIVE_SUPABASE=1 pnpm e2e`, seed-restoring); pgTAP 100/100; every screen curl-verified
+  and every write path RLS-verified live as the seeded paddler. `vercel.json`: services `web` + `solver`. Final review (fable) → one fix
+  wave (6 Important: safeNext, P6 reads, today-anchored next event, toggle follows server, boat-diagram table semantics, display-name
+  feedback) → re-review found a dot-segment redirect in my own W1 algorithm → fixed (W11) → re-check clean. Execution record (rulings
+  P1–P10, W1–W11): `docs/superpowers/plans/2026-08-26-plan-5-execution-ledger.md`. **NOT DEPLOYED — go-live needs Jun.**
+  **Deferred from Plan 5 (tracked):** SW `VERSION` static → same-cache growth across deploys (bump per build); `CLUB_TZ` hard-coded
+  `Australia/Sydney` (club column when multi-club); arrow-key navigation for heat tabs / segmented radios; `next typegen` in CI
+  (`next-env.d.ts` is git-ignored); preview-deploy validation of `vercel.json` + SW headers on Vercel; in-browser realtime e2e;
+  `fetchEvent`'s `as unknown as RaceRow[]` → `.returns<RaceRow[]>()`; reserves line raw `.micro` span; Lighthouse/PWA audit hosted;
+  magic-link end-to-end (SMTP) only verifiable hosted; Vite CJS config-loader notice on `pnpm test`; skip-mode `pnpm e2e` still boots
+  `next dev`; `AvailabilityToggle` key-remount can drop an in-flight optimistic state if an unrelated refresh lands mid-transition.
 - **Plan 4h — Quality pass on the app layer (merge b809334; branch head 7b5a156; 12 commits).** Reactive GRDB `ValueObservation`s end-to-end:
   repositories expose `observeX()` sharing one static `fetchX(_ db:)` with the one-shot reads (+ snapshot structs); every tab + detail view-model
   is `@MainActor @Observable` with `observe()`/`isLoaded`/`lastError`, built eagerly via `State(initialValue:)` — `syncGeneration`, `didLoad`,

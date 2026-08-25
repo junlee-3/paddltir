@@ -104,7 +104,7 @@ vercel.json                                        + web service (Task 6)
 **Interfaces:**
 - Produces: `@theme` tokens (`bg-bg text-ink border-border rounded-card …`), `MicroLabel`, `Card`, `PrimaryButton`, `Pill`, `SegmentedControl`; `lib/boat.ts` exports `type BoatSize = 'small' | 'standard'`, `type Section = 'stroke' | 'pace' | 'engine' | 'sprint'`, `BENCHES: Record<BoatSize, number>`, `benchesIn(benches: number, section: Section): [number, number]`, `sectionOf(benches: number, bench: number): Section`.
 
-- [ ] **Step 1: Scaffold**
+- [x] **Step 1: Scaffold**
 
 ```bash
 cd /Users/junlee/Documents/programming/paddltir
@@ -113,7 +113,7 @@ cd web && pnpm exec next --version && rm -f public/*.svg && ls app && test ! -d 
 ```
 (`--yes` takes the defaults for everything not given: no `src/` directory, Turbopack on. Registry check on 2026-08-26: `next` 16.3.2, `tailwindcss` 4.3, `@supabase/ssr` 0.12, `vitest` 4.1 — so the session hook file is `proxy.ts`.) Record the printed Next.js version in your report. If the scaffold produced a `src/` directory anyway, move `app/` up to `web/app/` and delete `src/` before continuing — every path in this plan is `web/app/...`, `web/lib/...`, `web/components/...`.
 
-- [ ] **Step 2: Scripts + Vitest**
+- [x] **Step 2: Scripts + Vitest**
 
 ```bash
 cd /Users/junlee/Documents/programming/paddltir/web && pnpm add -D vitest
@@ -146,7 +146,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: Write the failing boat test**
+- [x] **Step 3: Write the failing boat test**
 
 `web/lib/boat.test.ts`:
 ```ts
@@ -180,9 +180,9 @@ describe("boat sections (mirrors PaddltirCore.Boat)", () => {
 });
 ```
 
-- [ ] **Step 4: Run it — expect FAIL** (`pnpm test` → "Failed to resolve import ./boat").
+- [x] **Step 4: Run it — expect FAIL** (`pnpm test` → "Failed to resolve import ./boat").
 
-- [ ] **Step 5: Implement `web/lib/boat.ts`**
+- [x] **Step 5: Implement `web/lib/boat.ts`**
 
 ```ts
 // Mirrors PaddltirCore/Domain/Boat.swift — keep the two in lock-step.
@@ -223,9 +223,9 @@ export function sectionOf(benches: number, bench: number): Section {
 }
 ```
 
-- [ ] **Step 6: Run — expect PASS** (`pnpm test` → 4 passed).
+- [x] **Step 6: Run — expect PASS** (`pnpm test` → 4 passed).
 
-- [ ] **Step 7: Tokens + base styles** — replace `web/app/globals.css` entirely:
+- [x] **Step 7: Tokens + base styles** — replace `web/app/globals.css` entirely:
 
 ```css
 @import "tailwindcss";
@@ -274,7 +274,7 @@ body {
 }
 ```
 
-- [ ] **Step 8: Root layout** — replace `web/app/layout.tsx`:
+- [x] **Step 8: Root layout** — replace `web/app/layout.tsx`:
 
 ```tsx
 import type { Metadata, Viewport } from "next";
@@ -313,7 +313,7 @@ export default function Page() {
 }
 ```
 
-- [ ] **Step 9: UI primitives** — `web/components/ui.tsx`:
+- [x] **Step 9: UI primitives** — `web/components/ui.tsx`:
 
 ```tsx
 import type { ComponentProps, ReactNode } from "react";
@@ -385,7 +385,7 @@ export function SegmentedControl<T extends string>({
 }
 ```
 
-- [ ] **Step 10: `.env.example`** — `web/.env.example`:
+- [x] **Step 10: `.env.example`** — `web/.env.example`:
 ```
 # Local Supabase stack — run `supabase start` then `supabase status` and paste the anon key.
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
@@ -397,9 +397,9 @@ NEXT_PUBLIC_PADDLTIR_DEV_LOGIN=1
 ```
 Copy it to `web/.env.local` and paste the real local key from `supabase status` — either the legacy `ANON_KEY` JWT or the newer `PUBLISHABLE_KEY` (`sb_publishable_…`) works with supabase-js ≥ 2.100; never the `SECRET_KEY`/`SERVICE_ROLE_KEY`. `.env.local` is git-ignored; confirm with `git status --ignored web/.env.local`.
 
-- [ ] **Step 11: Gate** — `cd web && pnpm typecheck && pnpm lint && pnpm test && pnpm build` — all green.
+- [x] **Step 11: Gate** — `cd web && pnpm typecheck && pnpm lint && pnpm test && pnpm build` — all green.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 ```bash
 cd /Users/junlee/Documents/programming/paddltir && git add web && git status --short   # confirm .env.local is NOT listed
 git commit -m "feat(web): scaffold Paddltir PWA — Next.js, Tailwind v4 tokens, Inter Tight, UI primitives, boat sections"
@@ -417,7 +417,7 @@ git commit -m "feat(web): scaffold Paddltir PWA — Next.js, Tailwind v4 tokens,
 - Consumes: Task 1 primitives and tokens.
 - Produces: `createClient(): Promise<SupabaseClient<Database>>` (server), `createBrowserClient()` (client), `getViewer(): Promise<Viewer>` where `Viewer = { user: { id: string; email: string | null } | null; profile: { id: string; club_id: string | null; role: string | null; display_name: string | null } | null; paddler: OwnPaddler | null }` and `OwnPaddler = Pick<Row<'paddlers'>, 'id'|'club_id'|'name'|'weight_kg'|'gender'|'preferred_side'|'seat_preference'|'boat_role'>`; `gateFor(viewer): '/login' | '/join' | null`; `isPublicPath(pathname)`, `safeNext(raw)`.
 
-- [ ] **Step 1: Install + generate types** (local stack must be running: `supabase status` from the repo root)
+- [x] **Step 1: Install + generate types** (local stack must be running: `supabase status` from the repo root)
 ```bash
 cd /Users/junlee/Documents/programming/paddltir/web && pnpm add @supabase/supabase-js @supabase/ssr
 cd .. && supabase gen types typescript --local --schema public > web/lib/db/database.types.ts && head -5 web/lib/db/database.types.ts
@@ -431,7 +431,7 @@ export type Enums = Database["public"]["Enums"];
 export type PaddlerPublic = Database["public"]["Views"]["paddlers_public"]["Row"];
 ```
 
-- [ ] **Step 2: Failing tests for the pure auth rules**
+- [x] **Step 2: Failing tests for the pure auth rules**
 
 `web/lib/auth/paths.test.ts`:
 ```ts
@@ -491,7 +491,7 @@ describe("gateFor", () => {
 ```
 Run `pnpm test` — expect FAIL (modules missing).
 
-- [ ] **Step 3: Implement the pure modules**
+- [x] **Step 3: Implement the pure modules**
 
 `web/lib/auth/paths.ts`:
 ```ts
@@ -570,7 +570,7 @@ export const getViewer = cache(async (): Promise<Viewer> => {
 ```
 Run `pnpm test` — the two pure suites PASS (viewer.ts is only type-imported by gate.ts).
 
-- [ ] **Step 4: Supabase clients + session hook**
+- [x] **Step 4: Supabase clients + session hook**
 
 `web/lib/supabase/server.ts`:
 ```ts
@@ -652,7 +652,7 @@ export const config = {
 ```
 If `pnpm build` warns that the config export must be named `proxyConfig`, rename it — keep whichever name builds warning-free and note it in the report.
 
-- [ ] **Step 5: Login page + actions**
+- [x] **Step 5: Login page + actions**
 
 `web/app/login/actions.ts`:
 ```ts
@@ -765,7 +765,7 @@ export function LoginForm({ next }: { next: string }) {
 }
 ```
 
-- [ ] **Step 6: Auth route handlers**
+- [x] **Step 6: Auth route handlers**
 
 `web/app/auth/callback/route.ts`:
 ```ts
@@ -802,7 +802,7 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-- [ ] **Step 7: Join page + actions**
+- [x] **Step 7: Join page + actions**
 
 `web/app/join/actions.ts`:
 ```ts
@@ -917,7 +917,7 @@ export default async function JoinPage({ searchParams }: { searchParams: Promise
 }
 ```
 
-- [ ] **Step 8: App layout with gate + tab bar**
+- [x] **Step 8: App layout with gate + tab bar**
 
 `web/components/TabBar.tsx`:
 ```tsx
@@ -973,10 +973,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 ```
 Move the placeholder: `git mv web/app/page.tsx "web/app/(app)/page.tsx"`.
 
-- [ ] **Step 9: Gate + manual check**
+- [x] **Step 9: Gate + manual check**
 `pnpm typecheck && pnpm lint && pnpm test && pnpm build`. Then, with the local stack up and `seed_dev.sql` loaded: `pnpm dev` → open `http://localhost:3000/` → redirected to `/login` → dev sign-in as `lily@paddltir.dev` → lands on `/` showing the placeholder inside the tab bar. Sign out via `/profile` isn't built yet — `curl -X POST -i http://localhost:3000/auth/signout` returns 303 to `/login`. Record both in the report.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 ```bash
 git add web && git commit -m "feat(web): Supabase SSR auth — magic-link login, dev sign-in, join by invite code, gated app layout"
 ```
@@ -993,7 +993,7 @@ git add web && git commit -m "feat(web): Supabase SSR auth — magic-link login,
 - Consumes: `getViewer()`, `createClient()`, `benchesIn/sectionOf/BENCHES` (Task 1), `SegmentedControl/Card/MicroLabel/Pill`.
 - Produces: `type SeatRef = { bench: number; side: 'left' | 'right' }`; `type HeatView = { id: string; name: string; drummer: Named | null; sweep: Named | null; seats: SeatView[]; reserves: Named[] }` with `Named = { id: string; name: string }`, `SeatView = SeatRef & { paddler: Named | null }`; `type RaceView = { id: string; name: string; crewName: string; boatSize: BoatSize; benches: number; heats: HeatView[] }`; `type EventView = { id: string; kind: 'race_day'; title: string; startsAt: string; venue: string | null; races: RaceView[] } | { id: string; kind: 'training'; title: string; startsAt: string; venue: string | null; myAvailability: AvailabilityStatus | null; myNote: string | null }`; `AvailabilityStatus = 'in' | 'out' | 'maybe'`; `whereAmI(heat, paddlerId): { kind: 'seat'; bench; side } | { kind: 'drummer' } | { kind: 'sweep' } | { kind: 'reserve' } | { kind: 'none' }`; `benchRows(benches, seats): { bench; section; left; right }[]`; server action `setAvailability(sessionId: string, status: AvailabilityStatus): Promise<{ ok: true } | { ok: false; message: string }>`; `fetchUpcomingSessions(supabase, nowISO, limit)`, `fetchEvent(supabase, sessionId, paddlerId)`.
 
-- [ ] **Step 1: Realtime publication migration + pgTAP** (spec §4 "Realtime subscriptions to heats/seats/sessions")
+- [x] **Step 1: Realtime publication migration + pgTAP** (spec §4 "Realtime subscriptions to heats/seats/sessions")
 
 `supabase/migrations/20260826000600_realtime.sql`:
 ```sql
@@ -1016,7 +1016,7 @@ rollback;
 ```
 Run from the repo root: `supabase db reset && supabase test db` → expect all suites pass including `007_realtime` (2 tests). Then reload demo data: `/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed_dev.sql`. (`psql` is not on PATH in this environment — that libpq path works, as does `docker exec -i supabase_db_paddltir psql -U postgres -d postgres < supabase/seed_dev.sql`.) Regenerate types (no schema change, but keep the habit): `supabase gen types typescript --local --schema public > web/lib/db/database.types.ts`.
 
-- [ ] **Step 2: Failing tests for the pure modules**
+- [x] **Step 2: Failing tests for the pure modules**
 
 `web/lib/lineup.test.ts`:
 ```ts
@@ -1119,7 +1119,7 @@ describe("time (club time zone = Australia/Sydney)", () => {
 ```
 Run `pnpm test` — expect FAIL (modules missing).
 
-- [ ] **Step 3: Implement the pure modules**
+- [x] **Step 3: Implement the pure modules**
 
 `web/lib/lineup.ts`:
 ```ts
@@ -1258,7 +1258,7 @@ export function relativeDay(iso: string, nowISO: string): string {
 ```
 Run `pnpm test` — expect PASS.
 
-- [ ] **Step 4: Queries** — `web/lib/data/sessions.ts`:
+- [x] **Step 4: Queries** — `web/lib/data/sessions.ts`:
 
 ```ts
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -1301,7 +1301,7 @@ export async function fetchEvent(supabase: Client, sessionId: string, paddlerId:
 }
 ```
 
-- [ ] **Step 5: Server action** — `web/app/(app)/actions.ts`:
+- [x] **Step 5: Server action** — `web/app/(app)/actions.ts`:
 ```ts
 "use server";
 import { revalidatePath } from "next/cache";
@@ -1325,7 +1325,7 @@ export async function setAvailability(sessionId: string, status: AvailabilitySta
 }
 ```
 
-- [ ] **Step 6: Components**
+- [x] **Step 6: Components**
 
 `web/components/BoatDiagram.tsx` (server-renderable, no state):
 ```tsx
@@ -1488,7 +1488,7 @@ export function EventView({ event, me, nowISO }: { event: Event; me: string; now
 }
 ```
 
-- [ ] **Step 7: Pages**
+- [x] **Step 7: Pages**
 
 `web/app/(app)/page.tsx`:
 ```tsx
@@ -1560,10 +1560,10 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
 ```
 (`viewer.paddler!` is safe: the `(app)` layout redirected anyone without one.)
 
-- [ ] **Step 8: Gate + manual check**
+- [x] **Step 8: Gate + manual check**
 `pnpm typecheck && pnpm lint && pnpm test && pnpm build`. Then `pnpm dev`, sign in as Lily: `/` shows "Tuesday training" with the toggle on **In**; tap **Maybe** → persists across reload; "Coming up" lists "Sydney Regatta" → open it: Heat 1 shows Lily highlighted at Bench 1 left with the pill "Bench 1 left", Dee Drummer at the bow, Sam Sweep at the stern, reserves Hannah · Oscar; "Final" tab shows an empty hull. Realtime: in another terminal run `/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -c "update seats set bench = 5 where paddler_id = (select id from paddlers where name = 'Lily')"` → the open page updates without a reload (pill becomes "Bench 5 left"); revert with `bench = 1`. Record what you observed.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 ```bash
 git add web supabase/migrations/20260826000600_realtime.sql supabase/tests/007_realtime.sql
 git commit -m "feat(web): next event — race boat diagram with your seat, heat switcher, training availability, realtime refresh"
@@ -1581,7 +1581,7 @@ git commit -m "feat(web): next event — race boat diagram with your seat, heat 
 - Consumes: `setAvailability`, `AvailabilityToggle`, `getViewer`, `createClient`, `fetchUpcomingSessions`, `formatSessionDate/Time`.
 - Produces: `parseErgSubmission(input: { metres: string; testedAt: string }, todayYMD: string): { ok: true; metres: number; testedAt: string } | { ok: false; message: string }`; `polylinePoints(values: number[], width: number, height: number, pad?: number): string`; actions `submitErg(prev, formData): Promise<ErgState>`, `updateDisplayName(formData): Promise<void>`.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 `web/lib/erg.test.ts`:
 ```ts
@@ -1622,7 +1622,7 @@ describe("polylinePoints", () => {
 ```
 Run `pnpm test` — expect FAIL.
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 `web/lib/erg.ts`:
 ```ts
@@ -1698,7 +1698,7 @@ export async function updateDisplayName(formData: FormData): Promise<void> {
 }
 ```
 
-- [ ] **Step 3: Pages**
+- [x] **Step 3: Pages**
 
 `web/app/(app)/availability/page.tsx`:
 ```tsx
@@ -1860,9 +1860,9 @@ export default async function ProfilePage() {
 }
 ```
 
-- [ ] **Step 4: Gate + manual check** — `pnpm typecheck && pnpm lint && pnpm test && pnpm build`; `pnpm dev` as Lily: `/availability` lists both seeded sessions with her statuses; `/erg` shows two coach tests and a sparkline, logging `555` today adds a "Self" row and the trend updates; `/profile` shows Lily · 58.0 kg · Female · Left · Stroke · Paddler, renaming the display name persists, **Sign out** returns to `/login`.
+- [x] **Step 4: Gate + manual check** — `pnpm typecheck && pnpm lint && pnpm test && pnpm build`; `pnpm dev` as Lily: `/availability` lists both seeded sessions with her statuses; `/erg` shows two coach tests and a sparkline, logging `555` today adds a "Self" row and the trend updates; `/profile` shows Lily · 58.0 kg · Female · Left · Stroke · Paddler, renaming the display name persists, **Sign out** returns to `/login`.
 
-- [ ] **Step 5: Commit** — `git add web && git commit -m "feat(web): availability list, erg log with sparkline, profile"`
+- [x] **Step 5: Commit** — `git add web && git commit -m "feat(web): availability list, erg log with sparkline, profile"`
 
 ---
 
@@ -1875,7 +1875,7 @@ export default async function ProfilePage() {
 **Interfaces:**
 - Produces: `shouldShowNudge(input: { standalone: boolean; dismissed: boolean; isIOS: boolean; canPrompt: boolean }): 'ios' | 'prompt' | 'none'`.
 
-- [ ] **Step 1: Failing test** — `web/lib/install.test.ts`:
+- [x] **Step 1: Failing test** — `web/lib/install.test.ts`:
 ```ts
 import { describe, expect, it } from "vitest";
 import { shouldShowNudge } from "./install";
@@ -1905,7 +1905,7 @@ export function shouldShowNudge(i: { standalone: boolean; dismissed: boolean; is
 ```
 Run → PASS.
 
-- [ ] **Step 2: Icons** — `web/scripts/icon.svg`:
+- [x] **Step 2: Icons** — `web/scripts/icon.svg`:
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#0F172A"/>
@@ -1943,7 +1943,7 @@ cd web && pnpm add -D sharp && node scripts/make-icons.mjs && cp scripts/icon.sv
 ```
 Add `"icons": "node scripts/make-icons.mjs"` to `package.json` scripts. Commit the PNGs (they are the manifest's contract).
 
-- [ ] **Step 3: Manifest + offline page**
+- [x] **Step 3: Manifest + offline page**
 
 `web/app/manifest.ts`:
 ```ts
@@ -1976,7 +1976,7 @@ export default function OfflinePage() {
 }
 ```
 
-- [ ] **Step 4: Service worker** — `web/public/sw.js`:
+- [x] **Step 4: Service worker** — `web/public/sw.js`:
 ```js
 /* Paddltir service worker: app-shell caching only. Data (Supabase) is never cached — it is per-user and authorised. */
 const VERSION = "paddltir-v1";
@@ -2024,7 +2024,7 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
-- [ ] **Step 5: Client components + layout**
+- [x] **Step 5: Client components + layout**
 
 `web/components/RegisterServiceWorker.tsx`:
 ```tsx
@@ -2082,11 +2082,11 @@ export function InstallNudge() {
 ```
 In `web/app/layout.tsx`, add `icons: { apple: "/icons/apple-touch-icon.png" }` to `metadata`, and render `<RegisterServiceWorker />` and `<InstallNudge />` inside `<body>` after `{children}`.
 
-- [ ] **Step 6: Gate + verification**
+- [x] **Step 6: Gate + verification**
 `pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm start &` then:
 `curl -s http://localhost:3000/manifest.webmanifest | head -c 300` (JSON with `"name":"Paddltir"`), `curl -sI http://localhost:3000/sw.js | grep -iE "cache-control|service-worker-allowed"`, `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/icons/icon-512.png` (200), `curl -s http://localhost:3000/offline | grep -c "Paddltir needs a connection"` (1). Stop the server. Record outputs.
 
-- [ ] **Step 7: Commit** — `git add web && git commit -m "feat(web): installable PWA — manifest, icons, service worker with offline shell, add-to-home-screen nudge"`
+- [x] **Step 7: Commit** — `git add web && git commit -m "feat(web): installable PWA — manifest, icons, service worker with offline shell, add-to-home-screen nudge"`
 
 ---
 
@@ -2096,7 +2096,7 @@ In `web/app/layout.tsx`, add `icons: { apple: "/icons/apple-touch-icon.png" }` t
 - Create: `web/playwright.config.ts`, `web/e2e/smoke.spec.ts`, `web/README.md`
 - Modify: `vercel.json`, `web/package.json` (scripts), `web/.gitignore` (append Playwright outputs), `PROGRESS.md`, `docs/superpowers/plans/2026-08-26-plan-5-paddler-pwa.md` (tick boxes)
 
-- [ ] **Step 1: Playwright**
+- [x] **Step 1: Playwright**
 ```bash
 cd web && pnpm add -D @playwright/test && pnpm exec playwright install chromium
 printf '\n# Playwright\n/test-results/\n/playwright-report/\n' >> .gitignore
@@ -2167,7 +2167,7 @@ test("a paddler signs in, sees their next event, finds their seat, logs an erg",
 ```
 Run: `PADDLTIR_LIVE_SUPABASE=1 pnpm e2e` (local stack + demo seed loaded; if a previous run left Lily on "Maybe", the test still passes because it asserts the seeded state only after resetting — if it fails on the first assertion, re-seed with `supabase db reset` + `seed_dev.sql`). Expect 1 passed. Also run `pnpm e2e` without the flag → 1 skipped.
 
-- [ ] **Step 2: Vercel services** — replace `vercel.json`:
+- [x] **Step 2: Vercel services** — replace `vercel.json`:
 ```json
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
@@ -2182,7 +2182,7 @@ Run: `PADDLTIR_LIVE_SUPABASE=1 pnpm e2e` (local stack + demo seed loaded; if a p
 }
 ```
 
-- [ ] **Step 3: README** — `web/README.md`:
+- [x] **Step 3: README** — `web/README.md`:
 ```markdown
 # Paddltir — paddler PWA
 
@@ -2209,7 +2209,7 @@ Next.js App Router + Supabase (`@supabase/ssr`) + Tailwind v4. Mobile-first, ins
 Vercel project `paddltir` with services `web/` + `solver/` (`vercel.json`); env `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL=https://paddltir.vercel.app`. Supabase Auth → add the Vercel URL to redirect URLs (already listed in `supabase/config.toml` for local).
 ```
 
-- [ ] **Step 4: Full gate, docs, commit**
+- [x] **Step 4: Full gate, docs, commit**
 `cd web && pnpm typecheck && pnpm lint && pnpm test && pnpm build && PADDLTIR_LIVE_SUPABASE=1 pnpm e2e`; from the root `supabase test db` (all suites incl. 007). Tick every checkbox in this plan; add a `PROGRESS.md` bullet under MERGED TO MAIN reading: "**Plan 5 — Paddler PWA (web/).** Next.js App Router + @supabase/ssr; routes /login /join / /session/[id] /availability /erg /profile; boat diagram with your seat + heat switcher; realtime refresh (publication migration + pgTAP 007); installable (manifest/SW/nudge); N Vitest tests + 1 Playwright smoke (gated) verified vs local stack. NOT deployed — go-live needs Jun's Vercel/Supabase credentials." (fill in N).
 ```bash
 git add web vercel.json PROGRESS.md docs/superpowers/plans/2026-08-26-plan-5-paddler-pwa.md
