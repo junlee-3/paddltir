@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface2: #f8fafc;
+  --color-ink: #0f172a;
+  --color-ink2: #475569;
+  --color-ink3: #64748b;
+  --color-border: #e2e8f0;
+  --color-primary: #0f172a;
+  --color-on-primary: #ffffff;
+  --color-accent: #0d7377;
+  --color-good: #059669;
+  --color-danger: #dc2626;
+  --color-male-fill: #dcfce7;
+  --color-male-border: #86efac;
+  --color-female-fill: #fef3c7;
+  --color-female-border: #fcd34d;
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 12px;
+  --radius-ctl: 8px;
+  --radius-sm: 6px;
+  --spacing-touch: 44px;
+}
+
+html { color-scheme: light; }
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Paddltir signature: tiny tracked uppercase micro-label */
+.micro {
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-ink3);
+}
