@@ -38,7 +38,9 @@ struct AuthView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.R.ctl))
 
                 HStack {
-                    TextField("you@club.com", text: $email)
+                    TextField(text: $email, prompt: Text(verbatim: "you@club.com").foregroundStyle(DS.ink3)) {
+                        Text("Email")
+                    }
                         .textContentType(.emailAddress)
                         #if os(iOS)
                         .textInputAutocapitalization(.never)
@@ -46,7 +48,6 @@ struct AuthView: View {
                         #endif
                         .textFieldStyle(.plain)
                         .foregroundStyle(DS.ink)
-                        .tint(DS.ink)
                         .padding(DS.Space.s)
                         .background(DS.surface2, in: RoundedRectangle(cornerRadius: DS.R.ctl))
                         .overlay(RoundedRectangle(cornerRadius: DS.R.ctl).stroke(DS.border))
@@ -95,13 +96,15 @@ struct AuthView: View {
     @ViewBuilder private var devSignIn: some View {
         VStack(spacing: DS.Space.s) {
             MicroLabel("DEV — LOCAL STACK")
-            Button("Sign in as coach@paddltir.dev") {
+            Button {
                 Task {
                     do {
                         try await client.auth.signIn(email: "coach@paddltir.dev", password: "password123")
                         await session.refreshClub()
                     } catch { errorText = error.localizedDescription }
                 }
+            } label: {
+                Text(verbatim: "Sign in as coach@paddltir.dev")
             }
             .font(.dsCaption)
             .foregroundStyle(DS.accent)
