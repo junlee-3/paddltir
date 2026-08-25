@@ -16,3 +16,15 @@ import Testing
         #expect(AuthState.resolve(hasSession: true, clubID: "club-1") == .ready(clubID: "club-1"))
     }
 }
+
+@MainActor @Suite struct SessionControllerTests {
+    @Test func applyDrivesStateThroughTheReducer() {
+        let controller = SessionController(previewState: .signedOut)
+        controller.apply(hasSession: true, clubID: nil)
+        #expect(controller.state == .needsClub)
+        controller.apply(hasSession: true, clubID: "club-9")
+        #expect(controller.state == .ready(clubID: "club-9"))
+        controller.apply(hasSession: false, clubID: "club-9")
+        #expect(controller.state == .signedOut)
+    }
+}
