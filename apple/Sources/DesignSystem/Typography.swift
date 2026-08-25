@@ -31,4 +31,5 @@ public extension Font {
     static func dsNumber(_ size: CGFloat, _ w: PaddltirFont.W = .bold) -> Font {
         PaddltirFont.font(size, w)   // pair with .monospacedDigit() at the call site
     }
+    static let dsMono       = Font.system(size: 15, weight: .medium, design: .monospaced)  // invite codes, fixed-width IDs
 }

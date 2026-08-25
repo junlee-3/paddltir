@@ -45,6 +45,8 @@ struct AuthView: View {
                         .keyboardType(.emailAddress)
                         #endif
                         .textFieldStyle(.plain)
+                        .foregroundStyle(DS.ink)
+                        .tint(DS.ink)
                         .padding(DS.Space.s)
                         .background(DS.surface2, in: RoundedRectangle(cornerRadius: DS.R.ctl))
                         .overlay(RoundedRectangle(cornerRadius: DS.R.ctl).stroke(DS.border))
