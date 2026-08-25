@@ -18,6 +18,26 @@
   worktree/branch/ledger. (Opus was degraded for final reviews earlier this session; Sonnet worked reliably.)
 - Model note: commits through Plan 4b were Fable 5; Plans 4c–4g so far were Opus 4.8 (see git trailers).
 
+**PLAN 4h CANDIDATE — "quality pass" on the 4c–4g app layer (Jun wants premium-grade code; Opus's self-assessment
+of its own weakest points, for Fable to plan against). Do this AFTER 4g merges, BEFORE Plan 5. NOT a rewrite —
+the engine/repos/auth/sync wiring are verified (92 tests, live e2e); target the UI/architecture layer:**
+1. **Reactive data flow via GRDB `ValueObservation`** (biggest win): replace the load-once-`.task` + `AppEnvironment.
+   syncGeneration` reload hack. Screens observe the DB → auto-update on sync/writes; deletes the "empty until reload"
+   bug class, the `didLoad` boilerplate, and the VM `load()` re-entrancy issue. (Squad screenshot needed a 2-launch trick
+   because of this.)
+2. **One view-model ownership pattern**: every screen repeats `@State private var model: X?` + `if let … else
+   ProgressView()` + lazy creation in `.task`; standardise (create once, inject repos / a small factory on AppModel).
+3. **Error handling**: `try?` swallowed everywhere; the `all = (try? …) ?? []` idiom CLEARS state on a failed read
+   (anti-offline-first) — keep last-good state + a non-blocking error surface (banner), incl. SettingsView regenerate,
+   RaceHeatLoader, PaddlerDetail/CrewDetail not-found.
+4. **Dedupe boilerplate**: club-id `String??` flatten copy-pasted 4× (SquadView/PaddlerDetail/CrewsVM/…); the
+   detail-model shape 4× (Paddler/Crew/Training/RaceDay); `didLoad` 4×. Also GenderBadge reuse in the editor HUD.
+5. **Premium editor interactions** (the spec's hero): drag-and-drop w/ spring+haptics, swap animation, section-band
+   shading, long-press menu (lock/drummer/sweep), redo, multi-heat switcher nav (HeatSwitcher "+" is inert), reserves
+   "unavailable today" dimming, Mac centred-hull + right-inspector; Optimise once the solver is deployed (go-live).
+6. Smaller: surface side/gender/role squad filter chips (model supports them); availability note editing; erg
+   `recordedBy`→current coach; per-heat boat-size gender check; `.dsMono` everywhere; a11y audit; view snapshot tests.
+
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
   supabase (98 pgTAP, 3 opus security reviews) · cross-language golden fixtures · vercel.json.
