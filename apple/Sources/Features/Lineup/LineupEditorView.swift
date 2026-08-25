@@ -20,7 +20,7 @@ struct LineupEditorView: View {
             if let model, let lineup = model.lineup, let roster = model.roster, let boat = model.boat {
                 content(model, lineup: lineup, roster: roster, boat: boat)
             } else if didLoad {
-                ScreenScaffold("Lineup", note: "This race has no crew assigned yet — set one on the crew before building a lineup.")
+                ScreenScaffold("Lineup", note: "Couldn't load this race's crew. It may not have synced yet — go back and try again, or check the crew still exists.")
             } else {
                 ProgressView()
             }

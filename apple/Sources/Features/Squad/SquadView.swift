@@ -30,7 +30,11 @@ struct SquadView: View {
                             await model?.load()
                         }
                     } else {
-                        Text("No club").padding()
+                        VStack(spacing: DS.Space.m) {
+                            Text("No club yet").font(.dsBody).foregroundStyle(DS.ink2)
+                            Button("Close") { adding = false }.keyboardShortcut(.cancelAction)
+                        }
+                        .padding(DS.Space.l)
                     }
                 }
         }
