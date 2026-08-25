@@ -89,7 +89,7 @@ struct CrewDetailView: View {
     /// above it, so a real failure is never presented as "this record doesn't exist".
     @ViewBuilder private func notFoundState(_ model: CrewDetailModel) -> some View {
         VStack(spacing: DS.Space.m) {
-            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.l) }
+            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.xl) }
             ScreenScaffold("Not found", note: "This record is no longer available.")
         }
     }

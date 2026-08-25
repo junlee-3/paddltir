@@ -150,26 +150,28 @@ struct LineupRepository: Sendable {
         return row
     }
 
-    /// Adds a named heat to a race; `sort_order` is the next free slot (a plain
-    /// count, 0-based). Used by tests and by `ScheduleRepository.createRace`'s
-    /// race-birth heat (via `insertHeat` directly, not this overload — that one
-    /// needs `sort_order == 1` regardless of count). The editor's own "add
-    /// another heat" affordance uses the no-name overload below instead.
+    /// The next free `sort_order` for a race's heats: current max + 1, computed inside
+    /// the caller's write transaction. Shared by both `createHeat` overloads so a race
+    /// born with `sort_order == 1` (`ScheduleRepository.createRace`, via `insertHeat`
+    /// directly) can never collide with a heat added afterwards, named or not — and two
+    /// fast taps on either overload can't collide with each other either.
+    private static func nextSortOrder(_ db: Database, raceId: String) throws -> Int {
+        let existing = try Heat.filter(Column("race_id") == raceId).fetchAll(db)
+        return (existing.map(\.sortOrder).max() ?? 0) + 1
+    }
+
+    /// Adds a named heat to a race; `sort_order` is `nextSortOrder`. Used by tests.
     func createHeat(raceId: String, name: String) async throws -> Heat {
         try db.write { db in
-            let order = try Heat.filter(Column("race_id") == raceId).fetchCount(db)
-            return try Self.insertHeat(db, raceId: raceId, name: name, sortOrder: order)
+            try Self.insertHeat(db, raceId: raceId, name: name, sortOrder: try Self.nextSortOrder(db, raceId: raceId))
         }
     }
 
-    /// Adds a heat to a race with an auto-generated "Heat N" name; `sort_order`
-    /// is the current max + 1, computed inside the write transaction so two fast
-    /// taps can never collide on the same order (unlike a plain count, which
-    /// would collide with the race-birth heat's `sort_order == 1`).
+    /// Adds a heat to a race with an auto-generated "Heat N" name; `sort_order` is
+    /// `nextSortOrder`, so the name always matches its position.
     func createHeat(raceId: String) async throws -> Heat {
         try db.write { db in
-            let existing = try Heat.filter(Column("race_id") == raceId).fetchAll(db)
-            let sortOrder = (existing.map(\.sortOrder).max() ?? 0) + 1
+            let sortOrder = try Self.nextSortOrder(db, raceId: raceId)
             return try Self.insertHeat(db, raceId: raceId, name: "Heat \(sortOrder)", sortOrder: sortOrder)
         }
     }

@@ -41,13 +41,7 @@ struct LineupEditorView: View {
             } else if model.isLoaded && model.heats.isEmpty {
                 noHeatsState(model)
             } else if model.isLoaded {
-                ScreenScaffold("Lineup", note: "Couldn't load this race's crew. It may not have synced yet — go back and try again, or check the crew still exists.") {
-                    SecondaryButton("Try again") {
-                        if let h = model.heats[safe: model.selectedHeatIndex] {
-                            Task { await model.load(heatId: h.id) }
-                        }
-                    }
-                }
+                crewLoadFailedState(model)
             } else {
                 ProgressView()
             }
@@ -62,11 +56,37 @@ struct LineupEditorView: View {
 
     /// F1: a race with no heats (its only one deleted elsewhere) is a legitimate
     /// state, not an error — the switcher stays visible so "+" still works.
+    /// F2/F3 (re-review remainder): if this state was reached because a write
+    /// (e.g. `addHeat`) failed, `lastError` surfaces its own banner above the
+    /// scaffold, mirroring `CrewDetailView`/`PaddlerDetailView`'s `notFoundState`.
     @ViewBuilder private func noHeatsState(_ model: LineupViewModel) -> some View {
         @Bindable var model = model
-        ScreenScaffold("No heats yet", note: "Tap + to add the first heat for this race.") {
-            HeatSwitcher(names: model.heats.map(\.name), selection: $model.selectedHeatIndex,
-                         onAdd: { Task { await model.addHeat(raceId: race.id) } })
+        VStack(spacing: DS.Space.m) {
+            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.l) }
+            ScreenScaffold("No heats yet", note: "Tap + to add the first heat for this race.") {
+                HeatSwitcher(names: model.heats.map(\.name), selection: $model.selectedHeatIndex,
+                             onAdd: { Task { await model.addHeat(raceId: race.id) } })
+            }
+        }
+    }
+
+    /// F2/F3 (re-review remainder): the "couldn't load this race's crew" empty state,
+    /// with `lastError`'s banner above it when the failure is a genuine thrown error
+    /// (not the "hasn't synced yet" guess) — in that case the scaffold's own note is
+    /// shortened so it doesn't duplicate/contradict what the banner already says.
+    @ViewBuilder private func crewLoadFailedState(_ model: LineupViewModel) -> some View {
+        let note = model.lastError != nil
+            ? "Couldn't load this race's crew."
+            : "Couldn't load this race's crew. It may not have synced yet — go back and try again, or check the crew still exists."
+        VStack(spacing: DS.Space.m) {
+            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.l) }
+            ScreenScaffold("Lineup", note: note) {
+                SecondaryButton("Try again") {
+                    if let h = model.heats[safe: model.selectedHeatIndex] {
+                        Task { await model.load(heatId: h.id) }
+                    }
+                }
+            }
         }
     }
 

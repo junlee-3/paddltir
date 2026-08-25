@@ -81,7 +81,7 @@ struct PaddlerDetailView: View {
     /// exist".
     @ViewBuilder private func notFoundState(_ model: PaddlerDetailModel) -> some View {
         VStack(spacing: DS.Space.m) {
-            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.l) }
+            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.xl) }
             ScreenScaffold("Not found", note: "This record is no longer available.")
         }
     }

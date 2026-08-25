@@ -78,6 +78,12 @@ final class LineupViewModel {
         } catch {
             lastError = error.localizedDescription
             isLoaded = true
+            // The switcher must not keep highlighting the heat that just failed to load —
+            // fall back to whichever heat is still actually loaded (`heat` is untouched
+            // above, since the throw happens before it's ever reassigned), if any.
+            if let i = heats.firstIndex(where: { $0.id == heat?.id }) {
+                selectedHeatIndex = i
+            }
         }
     }
 
@@ -148,13 +154,7 @@ final class LineupViewModel {
         guard let lineup else { return }
         switch selection {
         case .reserve(let id):
-            selection = nil
-            guard !lineup.isLocked(seat) else { return }
-            mutate { l in
-                if l.drummerId == id { l.drummerId = nil }
-                if l.sweepId == id { l.sweepId = nil }
-                l.place(id, at: seat)
-            }
+            placeFromReserve(id, at: seat)
         case .seat(let s):
             selection = nil
             if s == seat { return }
@@ -169,8 +169,25 @@ final class LineupViewModel {
 
     func tapReserve(_ id: PaddlerID) {
         guard lineup != nil else { return }
-        if case .seat(let s) = selection { mutate { $0.place(id, at: s) }; selection = nil }
+        if case .seat(let s) = selection { placeFromReserve(id, at: s) }
         else { selection = (selection == .reserve(id)) ? nil : .reserve(id) }
+    }
+
+    /// The one choke point for "place a reserve into a seat via tap" — shared by
+    /// `tapSeat`'s reserve→seat case and `tapReserve`'s seat→reserve case (the same
+    /// action, reached by tapping the two halves in either order), so the F4 cap-clear
+    /// and the F6 lock guard live in exactly one place.
+    /// F6: a locked target seat is a no-op — no mutate, no undo entry.
+    /// F4: a paddler is never both seated and a cap — placing the current drummer/sweep
+    /// clears that role in the same `mutate`.
+    private func placeFromReserve(_ id: PaddlerID, at seat: Seat) {
+        selection = nil
+        guard let lineup, !lineup.isLocked(seat) else { return }
+        mutate { l in
+            if l.drummerId == id { l.drummerId = nil }
+            if l.sweepId == id { l.sweepId = nil }
+            l.place(id, at: seat)
+        }
     }
 
     func unseat(_ seat: Seat) { mutate { $0.remove(at: seat) }; selection = nil }
@@ -244,9 +261,17 @@ final class LineupViewModel {
         mutate { $0.remove(id) }; selection = nil
     }
 
+    /// F6: freshly locking the seat that's currently selected (as a swap source) clears
+    /// the selection — a locked seat can no longer be a valid tap-to-select source, so a
+    /// stale selection referencing it must not linger (it would otherwise let a
+    /// subsequent `tapReserve`/`tapSeat` evict the now-locked occupant, since a locked
+    /// seat could never be *chosen* as `.seat(seat)` again, but this one was chosen
+    /// before the lock happened).
     func toggleLock(_ seat: Seat) {
         guard let current = lineup, current.paddler(at: seat) != nil else { return }
-        mutate { $0.setLocked(!current.isLocked(seat), at: seat) }
+        let willLock = !current.isLocked(seat)
+        mutate { $0.setLocked(willLock, at: seat) }
+        if willLock, selection == .seat(seat) { selection = nil }
     }
 
     /// Drummer/sweep can't also hold a bench seat; assigning removes them from the hull.

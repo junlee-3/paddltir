@@ -11,8 +11,8 @@ import Testing
         let repo = LineupRepository(db: appDB)
         let h1 = try await repo.createHeat(raceId: "r-1", name: "Heat 1")
         let h2 = try await repo.createHeat(raceId: "r-1", name: "Heat 2")
-        #expect(h1.sortOrder == 0)
-        #expect(h2.sortOrder == 1)
+        #expect(h1.sortOrder == 1)   // max+1 of none → 1, matching the race-birth heat's convention
+        #expect(h2.sortOrder == 2)
         let stored = try appDB.read { db in try Heat.fetchOne(db, key: h1.id) }
         #expect(stored?.name == "Heat 1")
         let entries = try appDB.read { db in try OutboxEntry.filter(Column("table_name") == "heats").fetchAll(db) }

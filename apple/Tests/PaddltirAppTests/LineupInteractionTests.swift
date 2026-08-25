@@ -135,6 +135,22 @@ import Testing
         #expect(m.canUndo == canUndoBefore)
     }
 
+    /// F6 remainder: the reported gap was tap-to-place via a reserve chip evicting a
+    /// locked occupant, because `tapReserve` had no lock guard of its own and
+    /// `toggleLock` didn't clear a selection referencing the seat it just locked.
+    /// Both are fixed now (`placeFromReserve`'s guard, and `toggleLock` clearing the
+    /// stale selection) — either alone would make this a no-op; together they do.
+    @Test func tapReserveOntoLockedSelectedSeatIsANoOp() {
+        let m = vm(); m.dragDrop(PaddlerID("p1"), onto: a)
+        m.tapSeat(a)       // select the occupied seat
+        m.toggleLock(a)    // lock it
+        let before = m.lineup
+        let canUndoBefore = m.canUndo
+        m.tapReserve(PaddlerID("p2"))
+        #expect(m.lineup == before)
+        #expect(m.canUndo == canUndoBefore)
+    }
+
     // MARK: - F3: the editor surfaces every error
 
     @Test func saveClearsLastErrorOnSuccess() async throws {
