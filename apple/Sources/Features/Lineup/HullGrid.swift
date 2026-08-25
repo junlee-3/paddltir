@@ -59,15 +59,21 @@ struct HullGrid: View {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel(for: seat))
+        .accessibilityLabel(seatAccessibilityLabel(for: seat))
         .accessibilityHint("Double-tap to select")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private func accessibilityLabel(for seat: Seat) -> String {
-        let side = seat.side == .left ? "left" : "right"
-        let who = lineup.paddler(at: seat).flatMap { roster.byID[$0]?.name } ?? (lineup.paddler(at: seat) == nil ? "empty" : "occupied")
-        return "Bench \(seat.bench) \(side), \(who)"
+    private func seatAccessibilityLabel(for seat: Seat) -> String {
+        let sideWord = seat.side == .left ? "left" : "right"
+        let occupant = lineup.paddler(at: seat)
+        guard let pid = occupant, let p = roster.byID[pid] else {
+            return "Bench \(seat.bench) \(sideWord), empty"
+        }
+        let sideLetter = seat.side == .left ? "L" : "R"
+        let genderWord = p.gender == .male ? "male" : "female"
+        let prefNote = p.side.matches(seat.side) ? "" : ", side preference not met"
+        return "Bench \(seat.bench) \(sideWord), \(p.name), \(genderWord), side \(sideLetter), \(Int(p.weightKg)) kilograms\(prefNote)"
     }
 
     private func capRow(_ label: String, id: PaddlerID?) -> some View {
