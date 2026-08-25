@@ -80,7 +80,10 @@ enum DomainMapping {
     }
 
     /// Each paddler's most recent erg test: max `testedAt`, `createdAt` as tiebreak.
-    private static func latestErgByPaddler(_ ergs: [ErgTest]) -> [String: ErgTest] {
+    /// Not `private`: `PaddlerWithErg.join(rows:ergs:)` (Repositories/PaddlerWithErg.swift)
+    /// reuses this same tie-break when assembling the local `paddlers_with_power`
+    /// equivalent, rather than re-encoding the rule in a second place.
+    static func latestErgByPaddler(_ ergs: [ErgTest]) -> [String: ErgTest] {
         var latest: [String: ErgTest] = [:]
         for erg in ergs {
             guard let current = latest[erg.paddlerId] else {
