@@ -6,4 +6,8 @@ import PaddltirCore
     @Test func coreLinks() {
         #expect(Boat.standard.capacity == 20)
     }
+
+    @Test func dataLayerLinks() {
+        #expect(DataLayerSmoke.ok)
+    }
 }

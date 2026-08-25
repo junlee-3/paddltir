@@ -8,16 +8,28 @@ options:
 packages:
   PaddltirCore:
     path: ../packages/PaddltirCore
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: "7.0.0"
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: "2.0.0"
 targets:
   Paddltir:
     type: application
     supportedDestinations: [iOS, macOS]
     sources:
       - path: Sources
+        excludes:
+          - "Data/App/Secrets.example.swift"
     resources:
       - path: Sources/Resources
     dependencies:
       - package: PaddltirCore
+      - package: GRDB
+        product: GRDB
+      - package: Supabase
+        product: Supabase
     settings:
       base:
         MARKETING_VERSION: "0.1.0"

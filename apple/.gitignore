@@ -2,3 +2,4 @@
 DerivedData/
 screenshots/
 .DS_Store
+Sources/App/Secrets.swift
