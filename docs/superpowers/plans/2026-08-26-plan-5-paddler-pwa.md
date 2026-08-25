@@ -2110,7 +2110,7 @@ test("a paddler signs in, sees their next event, finds their seat, logs an erg",
   await page.getByLabel("Metres (1 min)").fill("555");
   await page.getByRole("button", { name: "Log erg test" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved 555 m.");
-  await expect(page.getByText("555 m")).toBeVisible();
+  await expect(page.getByText("555 m", { exact: true })).toBeVisible(); // exact: "Saved 555 m." must not also match
 
   // Profile + manifest
   await page.getByRole("link", { name: "Profile" }).click();
