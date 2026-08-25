@@ -93,6 +93,36 @@ final class LineupViewModel {
                                  drummerId: lineup.drummerId?.rawValue, sweepId: lineup.sweepId?.rawValue)
     }
 
+    var metrics: Metrics? {
+        guard let lineup, let roster else { return nil }
+        return Scoring.evaluate(lineup, roster: roster, reference: original)
+    }
+
+    /// Weight list for the balance beam: right-heavy positive, clamped to ±1.
+    var beamImbalance: Double {
+        guard let m = metrics else { return 0 }
+        let half = max(1, m.totalWeight / 2)
+        return max(-1, min(1, (m.weightRight - m.weightLeft) / half))
+    }
+
+    func autoFill() {
+        guard let request, let lineup else { return }
+        let req = PlacementRequest(boat: request.boat, roster: request.roster, candidates: request.candidates,
+                                   drummerId: lineup.drummerId, sweepId: lineup.sweepId,
+                                   locked: lineup.assignments.filter(\.locked), rule: request.rule, current: lineup)
+        let result = Greedy.autoFill(req)
+        mutate { $0 = result.lineup }
+    }
+
+    func suggestions() -> [SwapSuggestion] {
+        guard let lineup, let roster else { return [] }
+        return Suggestions.swaps(in: lineup, roster: roster, reference: original, limit: 3)
+    }
+
+    func apply(_ suggestion: SwapSuggestion) {
+        mutate { $0.swap(suggestion.a, suggestion.b) }
+    }
+
     #if DEBUG
     /// Test hook: inject a request + heat without a live DB round-trip.
     func _injectForTest(request: PlacementRequest, heat: Heat) {
