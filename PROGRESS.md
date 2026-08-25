@@ -14,7 +14,9 @@
   without a `complete` line; a "dispatched" line with no result = the subagent died → re-dispatch from `task-N-brief.md`).
 - Process per task: implementer → `scripts/review-package` → reviewer → fix loop → ledger `complete`. Final whole-branch
   review (fable) → merge (regular merge commit if main moved) → verify merged tree → docs → cleanup.
-- After 4h: Plan 5 (PWA). STOP before go-live (needs Jun's credentials). Model note: through 4b = Fable 5; 4c–4g T1–5 = Opus 4.8;
+- After 4h: Plan 5 (PWA) — **plan WRITTEN & committed (467a354): `docs/superpowers/plans/2026-08-26-plan-5-paddler-pwa.md`**
+  (6 tasks; Next.js App Router + @supabase/ssr in `web/`; realtime publication migration + pgTAP 007; PWA; Playwright smoke).
+  Execute it via SDD on a fresh worktree `.worktrees/plan-5-pwa` after 4h merges. STOP before go-live (needs Jun's credentials). Model note: through 4b = Fable 5; 4c–4g T1–5 = Opus 4.8;
   4g wrap-up + 4h onward = Fable 5 (see git trailers).
 
 MERGED TO MAIN:
