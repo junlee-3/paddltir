@@ -47,7 +47,7 @@ private struct MainShell: View {
         .tint(DS.accent)
         #else
         TabView(selection: $selection) {
-            SchedulePlaceholder()
+            ScheduleView()
                 .tabItem { Label("Schedule", systemImage: "calendar") }
                 .tag(0)
             CrewsPlaceholder()
@@ -74,7 +74,7 @@ private struct MainShell: View {
 
     @ViewBuilder private var macDetail: some View {
         switch macSelection ?? .schedule {
-        case .schedule: SchedulePlaceholder()
+        case .schedule: ScheduleView()
         case .crews: CrewsPlaceholder()
         case .squad: SquadPlaceholder()
         case .settings: SettingsView()
