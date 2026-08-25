@@ -529,6 +529,7 @@ export const env = {
 ```ts
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { assertNoQueryError } from "@/lib/data/queryError";
 import type { Row } from "@/lib/db/rows";
 
 export type OwnPaddler = Pick<Row<"paddlers">, "id" | "club_id" | "name" | "weight_kg" | "gender" | "preferred_side" | "seat_preference" | "boat_role">;
@@ -543,11 +544,14 @@ export const getViewer = cache(async (): Promise<Viewer> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { user: null, profile: null, paddler: null };
-  const [{ data: profile }, { data: paddler }] = await Promise.all([
+  const [profileRes, paddlerRes] = await Promise.all([
     supabase.from("profiles").select("id, club_id, role, display_name").eq("id", user.id).maybeSingle(),
     supabase.from("paddlers").select("id, club_id, name, weight_kg, gender, preferred_side, seat_preference, boat_role").eq("profile_id", user.id).is("archived_at", null).maybeSingle(),
   ]);
-  return { user: { id: user.id, email: user.email ?? null }, profile, paddler };
+  // Ruling P6: a failed query must surface (error boundary), never read as "no club" → /join.
+  assertNoQueryError("profile", profileRes.error);
+  assertNoQueryError("paddler", paddlerRes.error);
+  return { user: { id: user.id, email: user.email ?? null }, profile: profileRes.data, paddler: paddlerRes.data };
 });
 ```
 Run `pnpm test` — the two pure suites PASS (viewer.ts is only type-imported by gate.ts).
