@@ -9,6 +9,7 @@ import GRDB
 @MainActor @Observable
 final class ScheduleViewModel {
     private(set) var upNext: SessionRow?
+    private(set) var upNextHeadcount: Headcount?
     private(set) var upcoming: [DaySection] = []
     private(set) var past: [DaySection] = []
     private(set) var squadSize = 0
@@ -37,8 +38,9 @@ final class ScheduleViewModel {
             squadSize = paddlers.count
             let n = now()
             upNext = ScheduleGrouping.upNext(sessions, now: n)
-            upcoming = ScheduleGrouping.upcoming(sessions, now: n)
+            upcoming = ScheduleGrouping.upcoming(sessions.filter { $0.id != upNext?.id }, now: n)
             past = ScheduleGrouping.past(sessions, now: n)
+            if let up = upNext { upNextHeadcount = await headcount(for: up.id) } else { upNextHeadcount = nil }
         } catch { /* offline-first: a read failure leaves the last good state */ }
     }
 

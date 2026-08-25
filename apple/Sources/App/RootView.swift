@@ -29,12 +29,7 @@ struct RootView: View {
 /// Design tab exercising the whole design system), and a `NavigationSplitView` on macOS.
 private struct MainShell: View {
     #if os(iOS)
-    #if DEBUG
-    // Default-select the Design tab in DEBUG so a launched screenshot lands on the gallery.
     @State private var selection = 0
-    #else
-    @State private var selection = 0
-    #endif
     #endif
 
     var body: some View {

@@ -22,7 +22,7 @@ import Testing
         await vm.load()
         #expect(vm.clubId == "club-1")
         #expect(vm.upNext?.id == "soon")
-        #expect(vm.upcoming.flatMap(\.sessions).map(\.id) == ["soon"])
+        #expect(vm.upcoming.flatMap(\.sessions).map(\.id) == [])
         #expect(vm.past.flatMap(\.sessions).map(\.id) == ["past"])
     }
 

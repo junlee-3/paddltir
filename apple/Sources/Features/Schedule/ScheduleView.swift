@@ -75,6 +75,10 @@ struct ScheduleView: View {
                         if let venue = session.venue { Label(venue, systemImage: "mappin.and.ellipse").font(.dsCaption).foregroundStyle(DS.ink2) }
                         Text(DateFormatting.relative(session.startsAt)).font(.dsCaption).foregroundStyle(DS.accent)
                     }
+                    if let h = model.upNextHeadcount {
+                        Text("\(h.inCount) in · \(h.outCount) out · \(h.noReplyCount) no reply")
+                            .font(.dsCaption).foregroundStyle(DS.ink2)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
