@@ -61,7 +61,7 @@ Modified: all four repositories (observe methods + snapshot structs); `AppEnviro
 - `LineupRepository`: `func observeHeats(raceId: String) -> ValueObservation<ValueReducers.Fetch<[Heat]>>`.
 - `CrewSummary` gains `Equatable` (it's already `Hashable` → fine) — confirm it's `Sendable` (it is).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 // apple/Tests/PaddltirAppTests/ObservationTests.swift
@@ -112,9 +112,9 @@ import Testing
 }
 ```
 
-- [ ] **Step 2: Run to verify they fail** — `cd apple && xcodegen generate && xcodebuild … test 2>&1 | grep -iE "ObservationTests|observePaddlers|error:"`. Expected: FAIL — `has no member 'observePaddlers'` / `cannot find 'Loadable'`.
+- [x] **Step 2: Run to verify they fail** — `cd apple && xcodegen generate && xcodebuild … test 2>&1 | grep -iE "ObservationTests|observePaddlers|error:"`. Expected: FAIL — `has no member 'observePaddlers'` / `cannot find 'Loadable'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `Loadable`:
 ```swift
@@ -229,8 +229,8 @@ enum Loadable<Value: Equatable & Sendable>: Equatable, Sendable {
     }
 ```
 
-- [ ] **Step 4: Run to verify pass** — grep `ObservationTests|TEST SUCCEEDED`. Expected: 3 tests PASS; whole suite green (existing repository tests unchanged — the one-shot reads still work).
-- [ ] **Step 5: Commit** — `git commit -m "feat(app): repository ValueObservations + snapshot structs + Loadable"`
+- [x] **Step 4: Run to verify pass** — grep `ObservationTests|TEST SUCCEEDED`. Expected: 3 tests PASS; whole suite green (existing repository tests unchanged — the one-shot reads still work).
+- [x] **Step 5: Commit** — `git commit -m "feat(app): repository ValueObservations + snapshot structs + Loadable"`
 
 ---
 
@@ -240,7 +240,7 @@ enum Loadable<Value: Equatable & Sendable>: Equatable, Sendable {
 
 **Interfaces:** `AppEnvironment` gains `private(set) var clubId: String?` and `func observeClub() async` (long-lived; iterates `ValueObservation.tracking { try Club.fetchOne($0)?.id }`). `syncGeneration` is REMOVED (its only readers — the three tab views' `.onChange` — are removed in Task 3; to keep the build green across tasks, Task 2 removes the property AND the three `.onChange(of: app.environment.syncGeneration)` blocks in `ScheduleView`/`SquadView`/`CrewsView`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 // apple/Tests/PaddltirAppTests/AppEnvironmentClubTests.swift
@@ -265,9 +265,9 @@ import Testing
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails** — grep `AppEnvironmentClub|observeClub|error:`. Expected: FAIL — `has no member 'observeClub'`.
+- [x] **Step 2: Run to verify it fails** — grep `AppEnvironmentClub|observeClub|error:`. Expected: FAIL — `has no member 'observeClub'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `AppEnvironment`: delete `syncGeneration` (property + the `syncGeneration += 1` line + its doc comment); add `import GRDB`; add:
 ```swift
@@ -287,8 +287,8 @@ In `AppEnvironment`: delete `syncGeneration` (property + the `syncGeneration += 
 In `RootView`'s `.ready` branch add a second task: `.task { await environment.observeClub() }` (alongside the existing `.task { await environment.sync() }`).
 In `ScheduleView`, `SquadView`, `CrewsView`: delete the `.onChange(of: app.environment.syncGeneration) { … }` block (Task 3 replaces reloads with observation).
 
-- [ ] **Step 4: Run to verify pass** — grep `AppEnvironmentClubTests|TEST SUCCEEDED`; `grep -rn syncGeneration apple/Sources` is empty. Whole suite green.
-- [ ] **Step 5: Commit** — `git commit -m "feat(app): AppEnvironment observes clubId; remove syncGeneration"`
+- [x] **Step 4: Run to verify pass** — grep `AppEnvironmentClubTests|TEST SUCCEEDED`; `grep -rn syncGeneration apple/Sources` is empty. Whole suite green.
+- [x] **Step 5: Commit** — `git commit -m "feat(app): AppEnvironment observes clubId; remove syncGeneration"`
 
 ---
 
@@ -302,7 +302,7 @@ In `ScheduleView`, `SquadView`, `CrewsView`: delete the `.onChange(of: app.envir
 - `CrewsViewModel(db:)`: `summaries`, `isLoaded`, `lastError`, `observe()`, `load()`, `createCrew(clubId:name:division:category:)` (no reload; `clubId` property removed).
 - Views: `ScheduleView(db: AppDatabase)`, `SquadView(db:)`, `CrewsView(db:)` — `@State private var model` (non-optional) via `State(initialValue:)`; `.task { await model.observe() }`; club id read from `app.environment.clubId`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 // apple/Tests/PaddltirAppTests/ReactiveViewModelTests.swift
@@ -342,9 +342,9 @@ import Testing
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails** — grep `ReactiveViewModel|observe\(\)|error:`. Expected: FAIL — `has no member 'observe'` / `isLoaded`.
+- [x] **Step 2: Run to verify it fails** — grep `ReactiveViewModel|observe\(\)|error:`. Expected: FAIL — `has no member 'observe'` / `isLoaded`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `ScheduleViewModel` (full replacement of the load/create logic):
 ```swift
@@ -457,8 +457,8 @@ struct SquadView: View {
 ```
 `ScheduleView(db:)` and `CrewsView(db:)` follow the same shape (`createTraining(clubId: clubId, …)` via `if let clubId = app.environment.clubId`). `MainShell` (RootView) passes `app.environment.db`: it needs `@Environment(AppModel.self) private var app` and renders `ScheduleView(db: app.environment.db)` etc. at all call sites (iOS tabs + macOS `macDetail`). `PaddlerDetailView(paddlerId:db:)` exists after Task 4 — to keep Task 3 building, Task 3 passes `db:` only if Task 4 landed; **execute Task 4 before Task 3's view edits if needed** (see Pre-flight ordering note) — simplest: Task 3 leaves navigation destinations calling the CURRENT detail-view initializers, and Task 4 updates those call sites when it changes the detail inits.
 
-- [ ] **Step 4: Run to verify pass** — grep `ReactiveViewModelTests|ScheduleViewModelTests|SquadViewModelTests|TEST SUCCEEDED`; whole suite green; iOS + macOS build.
-- [ ] **Step 5: Commit** — `git commit -m "feat(app): reactive tab view-models; eager view construction; no reload hacks"`
+- [x] **Step 4: Run to verify pass** — grep `ReactiveViewModelTests|ScheduleViewModelTests|SquadViewModelTests|TEST SUCCEEDED`; whole suite green; iOS + macOS build.
+- [x] **Step 5: Commit** — `git commit -m "feat(app): reactive tab view-models; eager view construction; no reload hacks"`
 
 ---
 
@@ -473,7 +473,7 @@ struct SquadView: View {
 - `PaddlerDetailModel(paddlerId:db:)`: `paddler`, `ergHistory`, `isLoaded`, `lastError`, `observe()`, `save`, `archive`. (`clubId` param REMOVED — the edit form gets `app.environment.clubId`.)
 - Views: `TrainingDetailView(session:db:)`, `RaceDayDetailView(session:db:)`, `CrewDetailView(crewId:db:)`, `PaddlerDetailView(paddlerId:db:)`, `RaceHeatLoader(race:db:)`, `LineupEditorView(heatId:raceName:db:)` — all eager `State(initialValue:)`; `didLoad` removed everywhere (use `model.isLoaded`).
 
-- [ ] **Step 1: Implement one detail model in full — `CrewDetailModel`** (the others follow the identical shape):
+- [x] **Step 1: Implement one detail model in full — `CrewDetailModel`** (the others follow the identical shape):
 
 ```swift
 @MainActor @Observable
@@ -516,10 +516,10 @@ final class CrewDetailModel {
 ```
 `CrewDetailView`: `init(crewId: String, db: AppDatabase) { self.crewId = crewId; _model = State(initialValue: CrewDetailModel(crewId: crewId, db: db)) }`; body: `if model.crew != nil { content } else if model.isLoaded { ScreenScaffold("Not found", …) } else { ProgressView() }`; `.task { await model.observe() }`. `CrewGenderRuleTests` keeps using `load()` (unchanged assertion).
 
-- [ ] **Step 2: Apply the same shape** to `TrainingDetailModel` (`observeTrainingDetail(sessionId:)` → `paddlers` + `availability` dict; `setStatus`/`recordErg` do/catch, no reload), `RaceDayModel` (`observeRaceDay(sessionId:)` → `races`, `crews`, `crewNames`, `headcount`; `addRace` no reload), `PaddlerDetailModel` (`observePaddlerDetail(id:)`; `save`/`archive` no reload — `archive` still dismisses from the view). `RaceHeatLoader(race:db:)` keeps its resolve-or-create `.task` (a write) with `isResolved`/`failed` state instead of `didLoad`. `LineupEditorView(heatId:raceName:db:)` constructs `LineupViewModel(db:)` eagerly; keeps `load(heatId:)` (the editor edits a local `Lineup` value) with `model.isLoaded` replacing `didLoad` (add `private(set) var isLoaded = false` to `LineupViewModel.load`). `DebugFirstHeatEditor` passes `db: app.environment.db`. Update every `navigationDestination` call site to the new inits. `grep -rn "didLoad" apple/Sources` → empty; `grep -rn "model: .*?$" apple/Sources/Features` → no optional view-models remain.
+- [x] **Step 2: Apply the same shape** to `TrainingDetailModel` (`observeTrainingDetail(sessionId:)` → `paddlers` + `availability` dict; `setStatus`/`recordErg` do/catch, no reload), `RaceDayModel` (`observeRaceDay(sessionId:)` → `races`, `crews`, `crewNames`, `headcount`; `addRace` no reload), `PaddlerDetailModel` (`observePaddlerDetail(id:)`; `save`/`archive` no reload — `archive` still dismisses from the view). `RaceHeatLoader(race:db:)` keeps its resolve-or-create `.task` (a write) with `isResolved`/`failed` state instead of `didLoad`. `LineupEditorView(heatId:raceName:db:)` constructs `LineupViewModel(db:)` eagerly; keeps `load(heatId:)` (the editor edits a local `Lineup` value) with `model.isLoaded` replacing `didLoad` (add `private(set) var isLoaded = false` to `LineupViewModel.load`). `DebugFirstHeatEditor` passes `db: app.environment.db`. Update every `navigationDestination` call site to the new inits. `grep -rn "didLoad" apple/Sources` → empty; `grep -rn "model: .*?$" apple/Sources/Features` → no optional view-models remain.
 
-- [ ] **Step 3: Build + verify** — iOS gate (suite green — 100+ tests) + macOS build; the two greps above empty.
-- [ ] **Step 4: Commit** — `git commit -m "feat(app): reactive detail models; eager construction; didLoad + reload-after-write removed"`
+- [x] **Step 3: Build + verify** — iOS gate (suite green — 100+ tests) + macOS build; the two greps above empty.
+- [x] **Step 4: Commit** — `git commit -m "feat(app): reactive detail models; eager construction; didLoad + reload-after-write removed"`
 
 ---
 
@@ -529,7 +529,7 @@ final class CrewDetailModel {
 
 **Interfaces:** `public struct StatusBanner: View { public init(_ message: String, actionTitle: String? = nil, action: (() -> Void)? = nil) }`.
 
-- [ ] **Step 1: The component**
+- [x] **Step 1: The component**
 
 ```swift
 // apple/Sources/DesignSystem/Components/StatusBanner.swift
@@ -564,9 +564,9 @@ public struct StatusBanner: View {
 }
 ```
 
-- [ ] **Step 2: Wire it** — `MainShell` gets `@Environment(AppEnvironment.self) private var environment` and, on the iOS `TabView` and macOS `NavigationSplitView`, a `.safeAreaInset(edge: .top)` showing `StatusBanner("Couldn't sync — showing saved data.", actionTitle: "Retry") { Task { await environment.sync() } }` when `environment.lastSyncError != nil`. Each tab/detail view shows `if let e = model.lastError { StatusBanner(e) }` at the top of its content (padding `DS.Space.l` horizontal). Add a `StatusBanner` sample to `DesignSystemGallery` (DEBUG) so it's screenshot-verifiable.
-- [ ] **Step 3: Build + verify** — iOS + macOS green.
-- [ ] **Step 4: Commit** — `git commit -m "feat(app): StatusBanner; sync + write-error surfaces (cached data never discarded)"`
+- [x] **Step 2: Wire it** — `MainShell` gets `@Environment(AppEnvironment.self) private var environment` and, on the iOS `TabView` and macOS `NavigationSplitView`, a `.safeAreaInset(edge: .top)` showing `StatusBanner("Couldn't sync — showing saved data.", actionTitle: "Retry") { Task { await environment.sync() } }` when `environment.lastSyncError != nil`. Each tab/detail view shows `if let e = model.lastError { StatusBanner(e) }` at the top of its content (padding `DS.Space.l` horizontal). Add a `StatusBanner` sample to `DesignSystemGallery` (DEBUG) so it's screenshot-verifiable.
+- [x] **Step 3: Build + verify** — iOS + macOS green.
+- [x] **Step 4: Commit** — `git commit -m "feat(app): StatusBanner; sync + write-error surfaces (cached data never discarded)"`
 
 ---
 
@@ -578,7 +578,7 @@ public struct StatusBanner: View {
 - `LineupViewModel` adds: `private(set) var canRedo = false`; `func dragDrop(_ id: PaddlerID, onto seat: Seat)`; `func dropOnTray(_ id: PaddlerID)`; `func toggleLock(_ seat: Seat)`; `func setDrummer(_ id: PaddlerID?)`; `func setSweep(_ id: PaddlerID?)`; `func redo()`. `mutate` now clears the redo stack; `undo` pushes onto it.
 - `struct HullActions { var tap: (Seat) -> Void; var drop: (PaddlerID, Seat) -> Void; var unseat: (Seat) -> Void; var toggleLock: (Seat) -> Void; var setDrummer: (PaddlerID) -> Void; var setSweep: (PaddlerID) -> Void }`; `HullGrid(lineup:roster:selection:actions:)` (replaces `onTapSeat:`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 // apple/Tests/PaddltirAppTests/LineupInteractionTests.swift
@@ -636,9 +636,9 @@ import Testing
 }
 ```
 
-- [ ] **Step 2: Run to verify they fail** — grep `LineupInteraction|dragDrop|error:`. Expected: FAIL — `has no member 'dragDrop'`.
+- [x] **Step 2: Run to verify they fail** — grep `LineupInteraction|dragDrop|error:`. Expected: FAIL — `has no member 'dragDrop'`.
 
-- [ ] **Step 3: Implement the VM**
+- [x] **Step 3: Implement the VM**
 
 In `LineupViewModel`: add `private var redoStack: [Lineup] = []` and `private(set) var canRedo = false`. Change `mutate` to also `redoStack.removeAll(); canRedo = false`. Change `undo` to push the current lineup onto `redoStack` before restoring (`canRedo = true`). Add:
 ```swift
@@ -681,9 +681,9 @@ In `LineupViewModel`: add `private var redoStack: [Lineup] = []` and `private(se
     }
 ```
 
-- [ ] **Step 4: Run to verify pass** — grep `LineupInteractionTests|LineupViewModelTests|LineupSwapGuardTests|TEST SUCCEEDED` (existing tests must still pass; `undo` behavior unchanged for them).
+- [x] **Step 4: Run to verify pass** — grep `LineupInteractionTests|LineupViewModelTests|LineupSwapGuardTests|TEST SUCCEEDED` (existing tests must still pass; `undo` behavior unchanged for them).
 
-- [ ] **Step 5: Views — `HullActions` + drag/drop + context menu + feedback**
+- [x] **Step 5: Views — `HullActions` + drag/drop + context menu + feedback**
 
 ```swift
 // apple/Sources/Features/Lineup/HullActions.swift
@@ -705,8 +705,8 @@ struct HullActions {
 - locked seats show a small `Image(systemName: "lock.fill")` badge (`DS.ink3`, top-trailing overlay).
 `LineupEditorView`: build `HullActions` from the model (each action → the VM call + `Task { await model.save() }`); reserves chips `.draggable(id.rawValue)`; the reserves container `.dropDestination(for: String.self) { items, _ in … model.dropOnTray(PaddlerID(raw)); save; return true }`; a "Redo" tool button (`arrow.uturn.forward`, disabled when `!model.canRedo`); on the hull: `.animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.lineup)` and `.sensoryFeedback(.impact(weight: .light), trigger: model.lineup)`.
 
-- [ ] **Step 6: Build + verify** — iOS + macOS green (drag/drop + contextMenu + sensoryFeedback compile on both).
-- [ ] **Step 7: Commit** — `git commit -m "feat(app): lineup drag-and-drop, context menu, redo, haptics + spring motion"`
+- [x] **Step 6: Build + verify** — iOS + macOS green (drag/drop + contextMenu + sensoryFeedback compile on both).
+- [x] **Step 7: Commit** — `git commit -m "feat(app): lineup drag-and-drop, context menu, redo, haptics + spring motion"`
 
 ---
 
@@ -718,7 +718,7 @@ struct HullActions {
 - `LineupViewModel` adds `private(set) var heats: [Heat] = []`, `var selectedHeatIndex = 0`, `func observeHeats(raceId: String) async` (observation; auto-creates "Heat 1" if a race has none; loads the selected heat when the index changes), `func addHeat(raceId: String) async`.
 - `LineupEditorView(race: Race, db: AppDatabase)` (replaces `heatId:raceName:`); `RaceDayDetailView`'s `navigationDestination(for: Race.self)` → `LineupEditorView(race: race, db: app.environment.db)`; `RaceHeatLoader` DELETED.
 
-- [ ] **Step 1: VM** — add:
+- [x] **Step 1: VM** — add:
 ```swift
     private(set) var heats: [Heat] = []
     var selectedHeatIndex = 0 { didSet { if let h = heats[safe: selectedHeatIndex], h.id != heat?.id { Task { await load(heatId: h.id) } } } }
@@ -740,19 +740,19 @@ struct HullActions {
 ```
 (Add a tiny `extension Array { subscript(safe i: Int) -> Element? }` in `Shared/`.) Add `private(set) var lastError: String?` to the VM if not present.
 
-- [ ] **Step 2: View** — `LineupEditorView(race:db:)`: `.task { await model.observeHeats(raceId: race.id) }`; `HeatSwitcher(names: model.heats.map(\.name), selection: $model.selectedHeatIndex, onAdd: { Task { await model.addHeat(raceId: race.id) } })` (use `@Bindable`); `GenderBadge(metrics: metrics)` replaces the hand-rolled W/M row; section bands in `HullGrid`: each bench row's background = `sectionFill(bench)` where stroke/sprint rows use `DS.surface2` and pace/engine `DS.surface` (a subtle band; label unchanged). Wide layout: `private var isWide: Bool { #if os(macOS) true #else sizeClass == .regular #endif }` with `@Environment(\.horizontalSizeClass)` guarded `#if os(iOS)`; when wide, `HStack(alignment: .top, spacing: DS.Space.l) { hullColumn; inspector.frame(width: 360) }` where the inspector holds the Balance HUD + reserves + toolbar; otherwise the existing vertical stack. Delete `RaceHeatLoader`; `RaceDayDetailView` pushes `LineupEditorView(race:db:)`; `DebugFirstHeatEditor` fetches the first `Race` (`Race.order(Column("sort_order")).fetchOne`) and shows `LineupEditorView(race:db:)`.
-- [ ] **Step 3: Build + verify** — iOS + macOS green; `grep -rn RaceHeatLoader apple/Sources` empty; `grep -rn "W \\\\(metrics.women)" apple/Sources` empty.
-- [ ] **Step 4: Commit** — `git commit -m "feat(app): multi-heat switcher, section bands, GenderBadge, wide-screen inspector"`
+- [x] **Step 2: View** — `LineupEditorView(race:db:)`: `.task { await model.observeHeats(raceId: race.id) }`; `HeatSwitcher(names: model.heats.map(\.name), selection: $model.selectedHeatIndex, onAdd: { Task { await model.addHeat(raceId: race.id) } })` (use `@Bindable`); `GenderBadge(metrics: metrics)` replaces the hand-rolled W/M row; section bands in `HullGrid`: each bench row's background = `sectionFill(bench)` where stroke/sprint rows use `DS.surface2` and pace/engine `DS.surface` (a subtle band; label unchanged). Wide layout: `private var isWide: Bool { #if os(macOS) true #else sizeClass == .regular #endif }` with `@Environment(\.horizontalSizeClass)` guarded `#if os(iOS)`; when wide, `HStack(alignment: .top, spacing: DS.Space.l) { hullColumn; inspector.frame(width: 360) }` where the inspector holds the Balance HUD + reserves + toolbar; otherwise the existing vertical stack. Delete `RaceHeatLoader`; `RaceDayDetailView` pushes `LineupEditorView(race:db:)`; `DebugFirstHeatEditor` fetches the first `Race` (`Race.order(Column("sort_order")).fetchOne`) and shows `LineupEditorView(race:db:)`.
+- [x] **Step 3: Build + verify** — iOS + macOS green; `grep -rn RaceHeatLoader apple/Sources` empty; `grep -rn "W \\\\(metrics.women)" apple/Sources` empty.
+- [x] **Step 4: Commit** — `git commit -m "feat(app): multi-heat switcher, section bands, GenderBadge, wide-screen inspector"`
 
 ---
 
 ## Task 8: Integration, verification & wrap (controller)
 
-- [ ] **Step 1:** Full gates — iOS suite (expect ≥ 104 tests: 95 + 3 + 1 + 2 + 6 − 0; count whatever the run reports) with gated live tests skipped, zero warnings; macOS build.
-- [ ] **Step 2:** Gated live tests once against the local stack.
-- [ ] **Step 3:** Screenshots via the DEBUG env hooks — a **fresh install + single launch** per tab (the reactive flow must populate without any reload); the editor via `PADDLTIR_DEBUG_OPEN_FIRST_HEAT=1 PADDLTIR_DEBUG_AUTOFILL=1` (the editor now auto-creates a heat and shows the multi-heat switcher; if the seed's first race still lacks a crew, the "no crew assigned" state renders — that is a valid screenshot of Task 4/4g's empty state). Save as `apple/screenshots/4h-*.png`; surface to Jun.
-- [ ] **Step 4:** Update `PROGRESS.md` + roadmap: mark 4h merged; record what's still deferred (Optimise@go-live, Share, filter chips, availability notes, erg recordedBy, per-heat gender check, heat rename/delete, full a11y audit).
-- [ ] **Step 5:** Commit docs.
+- [x] **Step 1:** Full gates — iOS suite (expect ≥ 104 tests: 95 + 3 + 1 + 2 + 6 − 0; count whatever the run reports) with gated live tests skipped, zero warnings; macOS build.
+- [x] **Step 2:** Gated live tests once against the local stack.
+- [x] **Step 3:** Screenshots via the DEBUG env hooks — a **fresh install + single launch** per tab (the reactive flow must populate without any reload); the editor via `PADDLTIR_DEBUG_OPEN_FIRST_HEAT=1 PADDLTIR_DEBUG_AUTOFILL=1` (the editor now auto-creates a heat and shows the multi-heat switcher; if the seed's first race still lacks a crew, the "no crew assigned" state renders — that is a valid screenshot of Task 4/4g's empty state). Save as `apple/screenshots/4h-*.png`; surface to Jun.
+- [x] **Step 4:** Update `PROGRESS.md` + roadmap: mark 4h merged; record what's still deferred (Optimise@go-live, Share, filter chips, availability notes, erg recordedBy, per-heat gender check, heat rename/delete, full a11y audit).
+- [x] **Step 5:** Commit docs.
 
 ---
 
