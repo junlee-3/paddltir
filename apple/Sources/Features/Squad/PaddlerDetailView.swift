@@ -9,51 +9,67 @@ final class PaddlerDetailModel {
     let paddlerId: String
     private(set) var paddler: PaddlerWithErg?
     private(set) var ergHistory: [ErgTest] = []
+    private(set) var isLoaded = false
+    private(set) var lastError: String?
     private let squad: SquadRepository
-    let clubId: String
+    private let db: AppDatabase
 
-    init(paddlerId: String, db: AppDatabase, clubId: String) {
-        self.paddlerId = paddlerId; self.squad = SquadRepository(db: db); self.clubId = clubId
+    init(paddlerId: String, db: AppDatabase) {
+        self.paddlerId = paddlerId; self.db = db; self.squad = SquadRepository(db: db)
     }
-    func load() async {
-        paddler = try? await squad.paddler(id: paddlerId)
-        ergHistory = (try? await squad.ergHistory(paddlerId: paddlerId)) ?? []
+
+    /// Long-lived: run from the view's `.task`. Every DB change re-emits.
+    func observe() async {
+        do { for try await detail in squad.observePaddlerDetail(id: paddlerId).values(in: db.dbQueue) { apply(detail) } }
+        catch { lastError = error.localizedDescription }
     }
-    func save(_ row: PaddlerRow) async { _ = try? await squad.upsert(row); await load() }
-    func archive() async { try? await squad.archive(id: paddlerId); await load() }
+
+    private func apply(_ d: SquadRepository.PaddlerDetail) {
+        paddler = d.paddler
+        ergHistory = d.ergHistory
+        isLoaded = true; lastError = nil
+    }
+
+    func save(_ row: PaddlerRow) async {
+        do { _ = try await squad.upsert(row) } catch { lastError = error.localizedDescription }
+        // No reload: the observation delivers the updated paddler.
+    }
+
+    func archive() async {
+        do { try await squad.archive(id: paddlerId) } catch { lastError = error.localizedDescription }
+        // No reload: the view dismisses after this call — the observation
+        // would otherwise leave the (now archived) paddler on screen.
+    }
 }
 
 struct PaddlerDetailView: View {
     let paddlerId: String
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
-    @State private var model: PaddlerDetailModel?
+    @State private var model: PaddlerDetailModel
     @State private var editing = false
-    @State private var didLoad = false
+
+    init(paddlerId: String, db: AppDatabase) {
+        self.paddlerId = paddlerId
+        _model = State(initialValue: PaddlerDetailModel(paddlerId: paddlerId, db: db))
+    }
 
     var body: some View {
         Group {
-            if let model, let pw = model.paddler {
+            if let pw = model.paddler {
                 content(model, pw)
-            } else if didLoad {
+            } else if model.isLoaded {
                 ScreenScaffold("Not found", note: "This record is no longer available.")
             } else {
                 ProgressView()
             }
         }
-            .navigationTitle(model?.paddler?.row.name ?? "Paddler")
+            .navigationTitle(model.paddler?.row.name ?? "Paddler")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .background(DS.bg)
-            .task {
-                if model == nil {
-                    let clubId = ((try? app.environment.db.read { db in try Club.fetchOne(db)?.id }) ?? nil) ?? ""
-                    model = PaddlerDetailModel(paddlerId: paddlerId, db: app.environment.db, clubId: clubId)
-                }
-                await model?.load()
-                didLoad = true
-            }
+            .task { await model.observe() }
     }
 
     @ViewBuilder private func content(_ model: PaddlerDetailModel, _ pw: PaddlerWithErg) -> some View {
@@ -89,7 +105,15 @@ struct PaddlerDetailView: View {
             .padding(DS.Space.l)
         }
         .sheet(isPresented: $editing) {
-            PaddlerFormView(clubId: model.clubId, existing: pw.row) { row in await model.save(row) }
+            if let clubId = app.environment.clubId {
+                PaddlerFormView(clubId: clubId, existing: pw.row) { row in await model.save(row) }
+            } else {
+                VStack(spacing: DS.Space.m) {
+                    Text("No club yet").font(.dsBody).foregroundStyle(DS.ink2)
+                    Button("Close") { editing = false }.keyboardShortcut(.cancelAction)
+                }
+                .padding(DS.Space.l)
+            }
         }
     }
 }

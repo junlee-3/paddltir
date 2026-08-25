@@ -57,7 +57,7 @@ struct CrewsView: View {
                             .disabled(app.environment.clubId == nil)
                     }
                 }
-                .navigationDestination(for: CrewRepository.CrewSummary.self) { s in CrewDetailView(crewId: s.crew.id) }
+                .navigationDestination(for: CrewRepository.CrewSummary.self) { s in CrewDetailView(crewId: s.crew.id, db: app.environment.db) }
                 .sheet(isPresented: $adding) {
                     if let clubId = app.environment.clubId {
                         CrewFormView(clubId: clubId) { name, div, cat in

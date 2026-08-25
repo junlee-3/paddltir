@@ -18,6 +18,7 @@ final class LineupViewModel {
     var selection: Selection?
     private(set) var canUndo = false
     private(set) var isSaving = false
+    private(set) var isLoaded = false
 
     private let db: AppDatabase
     private let repo: LineupRepository
@@ -29,8 +30,14 @@ final class LineupViewModel {
     var roster: Roster? { request?.roster }
     var boat: Boat? { request?.boat }
 
+    /// One-shot: the editor edits a local `Lineup` value, so a live
+    /// observation would clobber unsaved edits — the view re-runs this
+    /// explicitly (initial `.task`, or "Try again" on the empty state).
+    /// `isLoaded` means "the load finished", whether or not a placement
+    /// request resolved; a nil `request`/`lineup` after that is what
+    /// selects the empty state.
     func load(heatId: String) async {
-        guard let req = try? await repo.placementRequest(heatId: heatId) else { return }
+        guard let req = try? await repo.placementRequest(heatId: heatId) else { isLoaded = true; return }
         let h = (try? await repo.heat(id: heatId))?.heat
         request = req
         heat = h
@@ -40,6 +47,7 @@ final class LineupViewModel {
         #if DEBUG
         if ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_AUTOFILL"] == "1" { autoFill() }
         #endif
+        isLoaded = true
     }
 
     /// Candidates not seated / drummer / sweep, strongest erg first.

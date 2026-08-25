@@ -44,8 +44,8 @@ struct ScheduleView: View {
                     }
                 }
                 .navigationDestination(for: SessionRow.self) { session in
-                    if session.kind == .training { TrainingDetailView(session: session) }
-                    else { RaceDayDetailView(session: session) }
+                    if session.kind == .training { TrainingDetailView(session: session, db: app.environment.db) }
+                    else { RaceDayDetailView(session: session, db: app.environment.db) }
                 }
         }
         .task { await model.observe() }

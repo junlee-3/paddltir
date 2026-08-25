@@ -133,7 +133,7 @@ private struct DebugFirstHeatEditor: View {
     var body: some View {
         NavigationStack {
             if let heatId {
-                LineupEditorView(heatId: heatId, raceName: "Lineup")
+                LineupEditorView(heatId: heatId, raceName: "Lineup", db: app.environment.db)
             } else {
                 ProgressView()
             }

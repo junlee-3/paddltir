@@ -22,7 +22,7 @@ struct SquadView: View {
                             .disabled(app.environment.clubId == nil)
                     }
                 }
-                .navigationDestination(for: PaddlerWithErg.self) { pw in PaddlerDetailView(paddlerId: pw.row.id) }
+                .navigationDestination(for: PaddlerWithErg.self) { pw in PaddlerDetailView(paddlerId: pw.row.id, db: app.environment.db) }
                 .sheet(isPresented: $adding) {
                     if let clubId = app.environment.clubId {
                         PaddlerFormView(clubId: clubId, existing: nil) { row in await model.add(row) }

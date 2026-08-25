@@ -8,46 +8,56 @@ import SwiftUI
 final class RaceDayModel {
     let session: SessionRow
     private(set) var races: [Race] = []
+    private(set) var crews: [Crew] = []
     private(set) var crewNames: [String: String] = [:]   // crewId -> name
     private(set) var headcount = Headcount(inCount: 0, outCount: 0, maybeCount: 0, noReplyCount: 0)
+    private(set) var isLoaded = false
+    private(set) var lastError: String?
     private let schedule: ScheduleRepository
-    private let crews: CrewRepository
-    private let squad: SquadRepository
+    private let db: AppDatabase
 
     init(session: SessionRow, db: AppDatabase) {
         self.session = session
+        self.db = db
         self.schedule = ScheduleRepository(db: db)
-        self.crews = CrewRepository(db: db)
-        self.squad = SquadRepository(db: db)
     }
 
-    var allCrews: [Crew] { _allCrews }
-    private var _allCrews: [Crew] = []
+    /// Long-lived: run from the view's `.task`. Every DB change re-emits.
+    func observe() async {
+        do { for try await snap in schedule.observeRaceDay(sessionId: session.id).values(in: db.dbQueue) { apply(snap) } }
+        catch { lastError = error.localizedDescription }
+    }
 
-    func load() async {
-        races = (try? await schedule.races(sessionId: session.id)) ?? []
-        _allCrews = (try? await crews.crews()) ?? []
-        crewNames = Dictionary(uniqueKeysWithValues: _allCrews.map { ($0.id, $0.name) })
-        let availability = (try? await schedule.session(id: session.id))?.availability ?? []
-        let squadSize = ((try? await squad.paddlers()) ?? []).count
-        headcount = Headcount.compute(availability: availability, squadSize: squadSize)
+    private func apply(_ s: ScheduleRepository.RaceDaySnapshot) {
+        races = s.races
+        crews = s.crews
+        crewNames = Dictionary(uniqueKeysWithValues: s.crews.map { ($0.id, $0.name) })
+        headcount = Headcount.compute(availability: s.availability, squadSize: s.squadSize)
+        isLoaded = true; lastError = nil
     }
 
     func addRace(crewId: String, name: String, boatSize: BoatSize, distanceM: Int?) async {
-        _ = try? await schedule.createRace(sessionId: session.id, crewId: crewId, name: name, boatSize: boatSize, distanceM: distanceM)
-        await load()
+        do { _ = try await schedule.createRace(sessionId: session.id, crewId: crewId, name: name, boatSize: boatSize, distanceM: distanceM) }
+        catch { lastError = error.localizedDescription }
+        // No reload: the observation delivers the new race.
     }
 }
 
 struct RaceDayDetailView: View {
     let session: SessionRow
-    @Environment(AppModel.self) private var app
-    @State private var model: RaceDayModel?
+    let db: AppDatabase
+    @State private var model: RaceDayModel
     @State private var addingRace = false
+
+    init(session: SessionRow, db: AppDatabase) {
+        self.session = session
+        self.db = db
+        _model = State(initialValue: RaceDayModel(session: session, db: db))
+    }
 
     var body: some View {
         Group {
-            if let model { content(model) } else { ProgressView() }
+            if model.isLoaded { content(model) } else { ProgressView() }
         }
         .navigationTitle(session.title)
         #if os(iOS)
@@ -58,15 +68,12 @@ struct RaceDayDetailView: View {
             ToolbarItem(placement: .primaryAction) { Button { addingRace = true } label: { Image(systemName: "plus") } }
         }
         .sheet(isPresented: $addingRace) {
-            if let model { RaceFormView(crews: model.allCrews) { crewId, name, size, dist in
+            RaceFormView(crews: model.crews) { crewId, name, size, dist in
                 await model.addRace(crewId: crewId, name: name, boatSize: size, distanceM: dist)
-            } }
+            }
         }
-        .navigationDestination(for: Race.self) { race in RaceHeatLoader(race: race) }
-        .task {
-            if model == nil { model = RaceDayModel(session: session, db: app.environment.db) }
-            await model?.load()
-        }
+        .navigationDestination(for: Race.self) { race in RaceHeatLoader(race: race, db: db) }
+        .task { await model.observe() }
     }
 
     @ViewBuilder private func content(_ model: RaceDayModel) -> some View {
@@ -151,29 +158,32 @@ struct RaceFormView: View {
 /// (switching among a race's existing heats) lands in a later pass.
 struct RaceHeatLoader: View {
     let race: Race
-    @Environment(AppModel.self) private var app
+    let db: AppDatabase
     @State private var heatId: String?
-    @State private var didLoad = false
+    @State private var isResolved = false
+    @State private var failed = false
 
     var body: some View {
         Group {
             if let heatId {
-                LineupEditorView(heatId: heatId, raceName: race.name)
-            } else if didLoad {
+                LineupEditorView(heatId: heatId, raceName: race.name, db: db)
+            } else if failed {
                 ScreenScaffold("Lineup", note: "Couldn't open the lineup.")
             } else {
                 ProgressView()
             }
         }
         .task {
-            guard heatId == nil else { return }
-            let repo = LineupRepository(db: app.environment.db)
+            guard !isResolved else { return }
+            let repo = LineupRepository(db: db)
             if let first = (try? await repo.heats(raceId: race.id))?.first {
                 heatId = first.id
             } else if let created = try? await repo.createHeat(raceId: race.id, name: "Heat 1") {
                 heatId = created.id
+            } else {
+                failed = true
             }
-            didLoad = true
+            isResolved = true
         }
     }
 }

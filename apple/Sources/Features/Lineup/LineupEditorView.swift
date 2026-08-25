@@ -9,18 +9,24 @@ import PaddltirCore
 struct LineupEditorView: View {
     let heatId: String
     let raceName: String
-    @Environment(AppModel.self) private var app
-    @State private var model: LineupViewModel?
+    @State private var model: LineupViewModel
     @State private var heatSelection = 0
     @State private var showSuggestions = false
-    @State private var didLoad = false
+
+    init(heatId: String, raceName: String, db: AppDatabase) {
+        self.heatId = heatId
+        self.raceName = raceName
+        _model = State(initialValue: LineupViewModel(db: db))
+    }
 
     var body: some View {
         Group {
-            if let model, let lineup = model.lineup, let roster = model.roster, let boat = model.boat {
+            if let lineup = model.lineup, let roster = model.roster, let boat = model.boat {
                 content(model, lineup: lineup, roster: roster, boat: boat)
-            } else if didLoad {
-                ScreenScaffold("Lineup", note: "Couldn't load this race's crew. It may not have synced yet — go back and try again, or check the crew still exists.")
+            } else if model.isLoaded {
+                ScreenScaffold("Lineup", note: "Couldn't load this race's crew. It may not have synced yet — go back and try again, or check the crew still exists.") {
+                    SecondaryButton("Try again") { Task { await model.load(heatId: heatId) } }
+                }
             } else {
                 ProgressView()
             }
@@ -30,11 +36,7 @@ struct LineupEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .background(DS.bg)
-        .task {
-            if model == nil { model = LineupViewModel(db: app.environment.db) }
-            await model?.load(heatId: heatId)
-            didLoad = true
-        }
+        .task { await model.load(heatId: heatId) }
     }
 
     @ViewBuilder private func content(_ model: LineupViewModel, lineup: Lineup, roster: Roster, boat: Boat) -> some View {
