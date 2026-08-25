@@ -115,7 +115,7 @@ struct ScheduleRepository: Sendable {
         ValueObservation.tracking { db in
             RaceDaySnapshot(
                 races: try Self.fetchRaces(db, sessionId: sessionId),
-                crews: try Crew.order(Column("name")).fetchAll(db),
+                crews: try CrewRepository.fetchCrews(db),
                 availability: try Self.fetchAvailability(db, sessionId: sessionId),
                 squadSize: try Self.fetchSquadSize(db)
             )

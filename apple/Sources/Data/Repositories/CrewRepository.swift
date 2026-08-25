@@ -16,11 +16,15 @@ struct CrewRepository: Sendable {
         self.db = db
     }
 
+    /// Shared fetch behind `crews()`, `fetchSummaries`, and
+    /// `ScheduleRepository.observeRaceDay`.
+    static func fetchCrews(_ db: Database) throws -> [Crew] {
+        try Crew.order(Column("name")).fetchAll(db)
+    }
+
     /// Every crew, alphabetical by name.
     func crews() async throws -> [Crew] {
-        try db.read { db in
-            try Crew.order(Column("name")).fetchAll(db)
-        }
+        try db.read(Self.fetchCrews)
     }
 
     /// Shared fetch behind `crew(id:)` and `fetchCrewDetail`: a crew and its
@@ -105,18 +109,21 @@ struct CrewRepository: Sendable {
         return row
     }
 
+    /// Shared fetch behind `racesForCrew(crewId:)` and `fetchCrewDetail`.
+    static func fetchRacesForCrew(_ db: Database, crewId: String) throws -> [Race] {
+        try Race.filter(Column("crew_id") == crewId).order(Column("sort_order")).fetchAll(db)
+    }
+
     /// A crew's races, in configured order.
     func racesForCrew(crewId: String) async throws -> [Race] {
-        try db.read { db in
-            try Race.filter(Column("crew_id") == crewId).order(Column("sort_order")).fetchAll(db)
-        }
+        try db.read { db in try Self.fetchRacesForCrew(db, crewId: crewId) }
     }
 
     /// Shared fetch behind `summaries(now:)` and `observeSummaries(now:)`:
     /// every crew (alphabetical) with its member count and the name of its
     /// race in the soonest future session (or nil).
     static func fetchSummaries(_ db: Database, now: Date) throws -> [CrewSummary] {
-        let crews = try Crew.order(Column("name")).fetchAll(db)
+        let crews = try Self.fetchCrews(db)
         return try crews.map { crew in
             let count = try CrewMember.filter(Column("crew_id") == crew.id).fetchCount(db)
             let races = try Race.filter(Column("crew_id") == crew.id).fetchAll(db)
@@ -158,7 +165,7 @@ struct CrewRepository: Sendable {
         guard let (crew, members) = try Self.fetchCrewWithMembers(db, id: id) else {
             return CrewDetail(crew: nil, members: [], races: [], squad: [], rule: nil)
         }
-        let races = try Race.filter(Column("crew_id") == id).order(Column("sort_order")).fetchAll(db)
+        let races = try Self.fetchRacesForCrew(db, crewId: id)
         let squad = try SquadRepository.fetchPaddlers(db)
         let key: [String: (any DatabaseValueConvertible)?] = [
             "club_id": crew.clubId,
