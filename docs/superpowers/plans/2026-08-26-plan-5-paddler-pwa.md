@@ -996,7 +996,7 @@ select is(
 select * from finish();
 rollback;
 ```
-Run from the repo root: `supabase db reset && supabase test db` → expect all suites pass including `007_realtime` (2 tests). Then reload demo data: `psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed_dev.sql`. Regenerate types (no schema change, but keep the habit): `supabase gen types typescript --local --schema public > web/lib/db/database.types.ts`.
+Run from the repo root: `supabase db reset && supabase test db` → expect all suites pass including `007_realtime` (2 tests). Then reload demo data: `/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed_dev.sql`. (`psql` is not on PATH in this environment — that libpq path works, as does `docker exec -i supabase_db_paddltir psql -U postgres -d postgres < supabase/seed_dev.sql`.) Regenerate types (no schema change, but keep the habit): `supabase gen types typescript --local --schema public > web/lib/db/database.types.ts`.
 
 - [ ] **Step 2: Failing tests for the pure modules**
 
@@ -1514,7 +1514,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
 (`viewer.paddler!` is safe: the `(app)` layout redirected anyone without one.)
 
 - [ ] **Step 8: Gate + manual check**
-`pnpm typecheck && pnpm lint && pnpm test && pnpm build`. Then `pnpm dev`, sign in as Lily: `/` shows "Tuesday training" with the toggle on **In**; tap **Maybe** → persists across reload; "Coming up" lists "Sydney Regatta" → open it: Heat 1 shows Lily highlighted at Bench 1 left with the pill "Bench 1 left", Dee Drummer at the bow, Sam Sweep at the stern, reserves Hannah · Oscar; "Final" tab shows an empty hull. Realtime: in another terminal run `psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -c "update seats set bench = 5 where paddler_id = (select id from paddlers where name = 'Lily')"` → the open page updates without a reload (pill becomes "Bench 5 left"); revert with `bench = 1`. Record what you observed.
+`pnpm typecheck && pnpm lint && pnpm test && pnpm build`. Then `pnpm dev`, sign in as Lily: `/` shows "Tuesday training" with the toggle on **In**; tap **Maybe** → persists across reload; "Coming up" lists "Sydney Regatta" → open it: Heat 1 shows Lily highlighted at Bench 1 left with the pill "Bench 1 left", Dee Drummer at the bow, Sam Sweep at the stern, reserves Hannah · Oscar; "Final" tab shows an empty hull. Realtime: in another terminal run `/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -c "update seats set bench = 5 where paddler_id = (select id from paddlers where name = 'Lily')"` → the open page updates without a reload (pill becomes "Bench 5 left"); revert with `bench = 1`. Record what you observed.
 
 - [ ] **Step 9: Commit**
 ```bash
@@ -2143,7 +2143,7 @@ Next.js App Router + Supabase (`@supabase/ssr`) + Tailwind v4. Mobile-first, ins
 
 ## Local setup
 1. From the repo root: `supabase start`, `supabase db reset`, then load demo data:
-   `psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed_dev.sql`
+   `/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed_dev.sql`
 2. `cp .env.example .env.local` and paste the anon key from `supabase status`.
 3. `pnpm install && pnpm dev` → http://localhost:3000 — sign in with the dev form as `lily@paddltir.dev` / `password123`
    (the form only renders when `NEXT_PUBLIC_PADDLTIR_DEV_LOGIN=1`; never set it on Vercel).
