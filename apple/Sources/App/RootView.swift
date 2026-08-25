@@ -1,8 +1,33 @@
 import SwiftUI
 
+/// Top-level gate: switches on `SessionController.state` to show the
+/// signed-out auth flow, the no-club onboarding flow, or the main app
+/// shell. The ready shell also drives `AppEnvironment.sync()` on launch and
+/// whenever the app returns to the foreground.
+struct RootView: View {
+    @Environment(SessionController.self) private var session
+    @Environment(AppEnvironment.self) private var environment
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        switch session.state {
+        case .signedOut:
+            AuthView()
+        case .needsClub:
+            OnboardingView()
+        case .ready:
+            MainShell()
+                .task { await environment.sync() }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { Task { await environment.sync() } }
+                }
+        }
+    }
+}
+
 /// App navigation shell — a `TabView` on iOS (Schedule / Crews / Squad, plus a DEBUG-only
 /// Design tab exercising the whole design system), and a `NavigationSplitView` on macOS.
-struct RootView: View {
+private struct MainShell: View {
     #if os(iOS)
     #if DEBUG
     // Default-select the Design tab in DEBUG so a launched screenshot lands on the gallery.
