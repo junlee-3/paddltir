@@ -79,4 +79,49 @@ struct CrewRepository: Sendable {
             }
         }
     }
+
+    struct CrewSummary: Identifiable, Hashable, Sendable {
+        let crew: Crew
+        let memberCount: Int
+        let nextRaceName: String?
+        var id: String { crew.id }
+    }
+
+    /// Creates a crew for `clubId`.
+    func createCrew(clubId: String, name: String, ageDivision: String, category: CrewCategory) async throws -> Crew {
+        let row = Crew(id: UUID().uuidString, clubId: clubId, name: name, ageDivision: ageDivision,
+                       category: category, createdAt: Date(), updatedAt: nil)
+        try db.write { db in
+            try row.insert(db)
+            try Outbox.enqueue(db: db, table: Crew.databaseTableName, pk: row.syncPrimaryKey,
+                               op: "insert", payload: try PostgREST.encoder.encode(row))
+        }
+        return row
+    }
+
+    /// A crew's races, in configured order.
+    func racesForCrew(crewId: String) async throws -> [Race] {
+        try db.read { db in
+            try Race.filter(Column("crew_id") == crewId).order(Column("sort_order")).fetchAll(db)
+        }
+    }
+
+    /// Every crew (alphabetical) with its member count and the name of its
+    /// race in the soonest future session (or nil).
+    func summaries(now: Date) async throws -> [CrewSummary] {
+        try db.read { db in
+            let crews = try Crew.order(Column("name")).fetchAll(db)
+            return try crews.map { crew in
+                let count = try CrewMember.filter(Column("crew_id") == crew.id).fetchCount(db)
+                let races = try Race.filter(Column("crew_id") == crew.id).fetchAll(db)
+                // soonest future session among this crew's races
+                var best: (Date, String)?
+                for race in races {
+                    guard let s = try SessionRow.fetchOne(db, key: race.sessionId), s.startsAt >= now else { continue }
+                    if best == nil || s.startsAt < best!.0 { best = (s.startsAt, race.name) }
+                }
+                return CrewSummary(crew: crew, memberCount: count, nextRaceName: best?.1)
+            }
+        }
+    }
 }
