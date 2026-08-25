@@ -26,7 +26,7 @@ final class SessionController {
         #if DEBUG
         if ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_AUTOSIGNIN"] == "1" {
             if (try? await client.auth.session) == nil {
-                try? await client.auth.signIn(email: "coach@paddltir.dev", password: "password123")
+                _ = try? await client.auth.signIn(email: "coach@paddltir.dev", password: "password123")
                 await refreshClub()
             }
         }
