@@ -30,4 +30,18 @@ describe("safeNext", () => {
   it("drops a hash fragment from an otherwise-safe path", () => {
     expect(safeNext("/erg#frag")).toBe("/erg");
   });
+  it("rejects dot-segment normalisation that collapses to a protocol-relative output", () => {
+    // WHATWG URL collapses these path-absolute inputs to a "//host"-shaped pathname during
+    // parsing (dot-segment removal), which `redirect()` would then send as a scheme-relative
+    // Location header — the browser treats "//evil.com" as "https://evil.com". Guard the
+    // OUTPUT, not just the input, since the origin check on `raw` never catches this.
+    expect(safeNext("/.//evil.com")).toBe("/");
+    expect(safeNext("/erg/..//evil.com")).toBe("/");
+    expect(safeNext("/%2e%2e//evil.com")).toBe("/");
+    expect(safeNext("/.%2e//evil.com")).toBe("/");
+  });
+  it("still normalises legitimate dot-segments that don't collapse to protocol-relative", () => {
+    expect(safeNext("/erg/../availability")).toBe("/availability");
+    expect(safeNext("/session/abc?x=1")).toBe("/session/abc?x=1");
+  });
 });
