@@ -22,6 +22,7 @@ targets:
       - path: Sources
         excludes:
           - "Data/App/Secrets.example.swift"
+          - "App/Paddltir.entitlements"
     resources:
       - path: Sources/Resources
     dependencies:
@@ -39,6 +40,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
         SWIFT_VERSION: "6.0"
+        CODE_SIGN_ENTITLEMENTS: Sources/App/Paddltir.entitlements
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_IDENTITY: ""
         CODE_SIGNING_REQUIRED: "NO"
