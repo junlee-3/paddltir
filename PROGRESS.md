@@ -4,7 +4,7 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Building the SwiftUI coach app (Plan 4). Foundation MERGED; next = data layer + sync (4b).**
+**Building the SwiftUI coach app (Plan 4). Foundation + data layer MERGED; next = auth & onboarding (4c).**
 
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
@@ -14,6 +14,16 @@ MERGED TO MAIN:
   type scale, primitives + domain components: SeatTile/TelemetryGrid/BalanceBeam/HeatSwitcher/AvailabilityRing),
   Design System gallery (screenshot verified vs concept), real Liquid Glass, LIGHT MODE ENFORCED. Builds
   iOS+macOS, reproducible from apple/project.yml. Final review clean.
+- **Plan 4b — Data layer & sync (commit a7e83d2).** Row models (snake_case Codable) + GRDB local store &
+  migrations; PostgREST date pipeline (wire→model→GRDB, never raw); DomainMapping to PaddltirCore; offline
+  sync (pull-since / outbox / LWW=outbox-wins-until-pushed); Squad/Crew/Schedule/Lineup repositories
+  (LineupRepository.placementRequest walks heat→race→crew→members→category_rule→seats into a PlacementRequest).
+  59 tests, live Supabase smoke gated behind PADDLTIR_LIVE_SUPABASE. Final review caught 3 cross-cutting
+  bugs — all fixed pre-merge: outbox deletes now route to RemoteStore.delete (were resurrecting via upsert);
+  drain in parent-first order (was nondeterministic FK-wedge); clubID caches only on success (was dead-ending
+  post-sign-in sync); + outbox collapses to net op per PK. **SETUP GOTCHA:** `Secrets.swift` is git-ignored,
+  so a fresh checkout / new worktree needs it copied from `Sources/Data/App/Secrets.example.swift` before the
+  app compiles (README documents it).
 
 VISUAL DIRECTION (APPROVED by Jun): enhanced CrewCoach — slate-on-white, hairline borders, green=Male
 (#DCFCE7/#86EFAC) / amber=Female (#FEF3C7/#FCD34D) tiles + emerald(#059669)/red(#DC2626) verdicts KEPT;
@@ -26,8 +36,12 @@ BUILD MECHANICS (learned): XcodeGen (apple/project.yml → run `xcodegen generat
 UI verify = boot iPhone 17 Pro sim + `xcrun simctl io ... screenshot`. Real Liquid Glass API:
 `.glassEffect(.regular, in: .rect(cornerRadius:))` + `GlassEffectContainer(spacing:content:)` (iOS/macOS 26).
 
-REMAINING (in order): **Plan 4b** (data models + GRDB local store + Supabase sync) → 4c auth/onboarding →
-4d Schedule/availability → 4e Crews/Squad → 4f Lineup editor (the hero) → 4g coach-app integration.
+REMAINING (in order): **Plan 4c** (auth/onboarding) → 4d Schedule/availability → 4e Crews/Squad →
+4f Lineup editor (the hero) → 4g coach-app integration.
+CARRY-FORWARD from 4b review (folded into roadmap 4d/4e): 4d — @MainActor AppEnvironment + wire sync() into
+RootView.task, rename upcomingSessions()→sessions(); 4e — add heat drummer/sweep persistence (no repo writes
+`heats` yet). Deferred to Plan 6: ISO8601 ms-truncation causes newest row to re-pull each sync (idempotent);
+splitRows returns [] on non-array response; live push never exercised.
 Then Plan 5 (paddler PWA), GO-LIVE (hosted Supabase project ap-southeast-2 + Vercel deploy), Plan 6
 end-to-end integration (incl. deferred solver hardening: UUID-validate heatId, httpx reuse, auth-before-conn).
 Execution: subagent-driven-development on a per-sub-plan branch/worktree, merge to main after each final review.

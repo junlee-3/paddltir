@@ -26,19 +26,26 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
       XcodeGen project (iOS+macOS), PaddltirCore linked, Inter Tight bundled, colour asset catalog from
       tokens, type scale + spacing, core reusable components (MicroLabel, GlassCard/Toolbar, PrimaryButton,
       SeatTile, TelemetryGrid, Pill), a **Design System gallery** screen. Verify: builds + screenshot.
-- [ ] **4b — Data layer & sync** `2026-08-25-plan-4b-data.md`
+- [x] **4b — Data layer & sync (MERGED a7e83d2)** `2026-08-25-plan-4b-data.md`
       Swift row models mirroring the schema; GRDB local store + migrations; Supabase client (supabase-swift)
       for Auth/PostgREST/Realtime; repositories; pull-on-foreground / outbox-push / last-write-wins sync;
-      an offline-first cache. Verify: unit tests on mappers/sync-diff; a seeded local DB renders a list.
+      an offline-first cache. 59 tests. Final review + 3 cross-cutting fixes (delete-routing, deterministic
+      drain order, clubID cache-on-success). **First-time setup:** copy `Sources/Data/App/Secrets.example.swift`
+      → `Sources/App/Secrets.swift` (git-ignored) or the app won't compile.
 - [ ] **4c — Auth & onboarding** `2026-08-25-plan-4c-auth.md`
       Sign in with Apple + email magic link (Supabase Auth); create-club / join-with-code (RPCs);
       claim-your-name; Settings (club, invite code/share, category rules, sign out). Verify: flow screenshots.
 - [ ] **4d — Schedule & availability** `2026-08-25-plan-4d-schedule.md`
       Schedule tab, Up-next hero, session detail (training + race day), availability list + coach override,
       record-erg quick action. Verify: screenshots against the demo data.
+      **Carry-forward from 4b review:** (a) annotate `AppEnvironment` `@MainActor` and wire its `sync()`
+      into `RootView.task` (the clubID cache-on-success fix already unblocks pre-sign-in syncs);
+      (b) rename `ScheduleRepository.upcomingSessions()` → `sessions()` (it sorts, doesn't future-filter).
 - [ ] **4e — Crews & Squad** `2026-08-25-plan-4e-crews-squad.md`
       Crews tab + crew detail (members, gender-rule check, races history); Squad roster table (sort/filter),
       paddler detail (edit, erg history sparkline, availability, invite/link). Verify: screenshots.
+      **Carry-forward from 4b review:** add heat drummer/sweep persistence — `LineupRepository` writes `seats`
+      but no repository writes `heats`, so a drummer/sweep assignment can't be saved yet (needed by the 4f editor).
 - [ ] **4f — Lineup editor (the hero)** `2026-08-25-plan-4f-editor.md`
       Races/heats; the hull grid; seat **drag** (spring + haptic) and **tap-tap**; the **Balance HUD**
       telemetry (emerald/red verdicts + balance beam) driven by `PaddltirCore` on every change; reserves
