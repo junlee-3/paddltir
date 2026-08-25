@@ -495,10 +495,13 @@ export function isPublicPath(pathname: string): boolean {
   return PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));
 }
 
-/** Only a same-origin relative path may be used as a post-login destination. */
+/** Only a same-origin relative path may be used as a post-login destination.
+ *  Ruling W1: WHATWG URL treats `\` as `/`, so `/\evil.com` would resolve to https://evil.com — reject
+ *  any backslash (raw or %5C-encoded), protocol-relative paths, and anything whose resolved origin changes. */
 export function safeNext(raw: string | null): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
-  return raw;
+  if (!raw || !raw.startsWith("/") || /^\/[\/\\]/.test(raw) || raw.includes("\\") || /%5c/i.test(raw)) return "/";
+  const u = new URL(raw, "http://x");
+  return u.origin === "http://x" ? u.pathname + u.search : "/";
 }
 ```
 `web/lib/auth/gate.ts`:
@@ -1224,6 +1227,7 @@ Run `pnpm test` — expect PASS.
 ```ts
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/database.types";
+import { assertNoQueryError } from "@/lib/data/queryError";
 import { paddlerIds, toRaceViews, type EventView, type RaceRow } from "@/lib/event";
 
 type Client = SupabaseClient<Database>;
@@ -1243,7 +1247,8 @@ export async function fetchEvent(supabase: Client, sessionId: string, paddlerId:
   if (!s) return null;
   const base = { id: s.id, title: s.title, startsAt: s.starts_at, venue: s.venue };
   if (s.kind === "training") {
-    const { data: a } = await supabase.from("availability").select("status, note").eq("session_id", s.id).eq("paddler_id", paddlerId).maybeSingle();
+    const { data: a, error: aErr } = await supabase.from("availability").select("status, note").eq("session_id", s.id).eq("paddler_id", paddlerId).maybeSingle();
+    assertNoQueryError("availability", aErr); // Ruling W2/P6: a failed read must surface, not render as "no answer"
     return { ...base, kind: "training", myAvailability: a?.status ?? null, myNote: a?.note ?? null };
   }
   const { data: races, error: rErr } = await supabase.from("races").select(RACE_SELECT).eq("session_id", s.id).order("sort_order");
@@ -1252,7 +1257,8 @@ export async function fetchEvent(supabase: Client, sessionId: string, paddlerId:
   const ids = [...paddlerIds(rows)];
   const names = new Map<string, string>();
   if (ids.length) {
-    const { data: people } = await supabase.from("paddlers_public").select("id, name").in("id", ids);
+    const { data: people, error: pErr } = await supabase.from("paddlers_public").select("id, name").in("id", ids);
+    assertNoQueryError("paddlers_public", pErr); // Ruling W2/P6: never render every seat as "Unknown" on a failed read
     people?.forEach((p) => { if (p.id && p.name) names.set(p.id, p.name); });
   }
   return { ...base, kind: "race_day", races: toRaceViews(rows, names) };
@@ -1454,7 +1460,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/data/viewer";
 import { fetchEvent, fetchUpcomingSessions } from "@/lib/data/sessions";
-import { formatSessionDate, formatSessionTime } from "@/lib/time";
+import { formatSessionDate, formatSessionTime, startOfTodayISO } from "@/lib/time";
 import { EventView } from "@/components/EventView";
 import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 import { Card, MicroLabel, Pill } from "@/components/ui";
@@ -1463,7 +1469,8 @@ export default async function NextEventPage() {
   const viewer = await getViewer();
   const supabase = await createClient();
   const nowISO = new Date().toISOString();
-  const upcoming = await fetchUpcomingSessions(supabase, nowISO);
+  // Ruling W3: anchor on the start of today in the club time zone so a race day stays on this screen for its whole day.
+  const upcoming = await fetchUpcomingSessions(supabase, startOfTodayISO(nowISO));
   const next = upcoming[0] ? await fetchEvent(supabase, upcoming[0].id, viewer.paddler!.id) : null;
   return (
     <main className="flex flex-col gap-6">
