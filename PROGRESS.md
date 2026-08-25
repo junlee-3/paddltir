@@ -9,6 +9,8 @@
 **RESUME HERE (overnight autonomous run, 2026-08-26 — Fable 5):** Plan 4h is executing via subagent-driven-development.
 - Plan: `docs/superpowers/plans/2026-08-26-plan-4h-quality-pass.md` (8 tasks). Worktree: `.worktrees/plan-4h-quality`
   (branch `plan-4h-quality`, from main after 59a2a85). **Copy `apple/Sources/App/Secrets.swift` into it if missing.**
+- **Progress 2026-08-26 ~02:15:** Tasks 1–5 COMPLETE on `plan-4h-quality` (pushed; 102 tests/30 suites; rulings H1–H11 in the ledger);
+  Task 6 (editor drag/drop + redo + a11y carry) implemented (108/31) and under review; then T7 (multi-heat), T8 (verify/docs), final review, merge.
 - **Ledger = source of truth for what's next:** `.superpowers/sdd/2026-08-26-plan-4h-quality-pass/progress.md`
   (pre-flight rulings H1–H3 + carried 4g-review recs at the top; Task log at the bottom — resume at the first task
   without a `complete` line; a "dispatched" line with no result = the subagent died → re-dispatch from `task-N-brief.md`).
