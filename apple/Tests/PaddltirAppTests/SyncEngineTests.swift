@@ -22,6 +22,10 @@ actor FakeRemote: RemoteStore {
     let clubID: String?
     private var rowsByTable: [String: [Data]] = [:]
     private(set) var pushedByTable: [String: [Data]] = [:]
+    private(set) var deletedByTable: [String: [Data]] = [:]
+    /// Table names in the order they received a non-empty push or delete —
+    /// lets tests assert parent-before-child drain ordering.
+    private(set) var writeLog: [String] = []
 
     init(clubID: String? = "club-1") {
         self.clubID = clubID
@@ -41,7 +45,15 @@ actor FakeRemote: RemoteStore {
     }
 
     func push(table: String, rows: [Data]) async throws {
+        guard !rows.isEmpty else { return }
         pushedByTable[table, default: []].append(contentsOf: rows)
+        writeLog.append(table)
+    }
+
+    func delete(table: String, rows: [Data]) async throws {
+        guard !rows.isEmpty else { return }
+        deletedByTable[table, default: []].append(contentsOf: rows)
+        writeLog.append(table)
     }
 }
 
@@ -202,5 +214,91 @@ actor FakeRemote: RemoteStore {
         #expect(pushed?.count == 1)
         let remainingOutbox = try appDB.read { db in try OutboxEntry.fetchCount(db) }
         #expect(remainingOutbox == 0)
+    }
+
+    // MARK: - Delete routing (deletes must not resurrect on the server)
+
+    /// A `"delete"` outbox entry is routed to `remote.delete`, never
+    /// `remote.push` — pushing it would upsert the row the coach removed and,
+    /// for trigger-bumped tables, pull it back on the next sync.
+    @Test func syncAllRoutesDeletesToDeleteNotPush() async throws {
+        let appDB = try AppDatabase.inMemory()
+        let remote = FakeRemote(clubID: clubId)
+        let payload = Data("removed-member".utf8)
+        try appDB.write { db in
+            try Outbox.enqueue(db: db, table: "crew_members", pk: "c-1|p-1", op: "delete", payload: payload)
+        }
+
+        try await SyncEngine(db: appDB, remote: remote).syncAll()
+
+        let deleted = await remote.deletedByTable["crew_members"]
+        #expect(deleted == [payload])
+        let pushed = await remote.pushedByTable["crew_members"]
+        #expect(pushed == nil) // never upserted
+        #expect(try appDB.read { db in try OutboxEntry.fetchCount(db) } == 0)
+    }
+
+    /// The outbox drains parents before children (SyncableTable.all order),
+    /// regardless of insertion order, so a queued child never reaches the
+    /// server ahead of the parent it references.
+    @Test func drainPushesParentTablesBeforeChildren() async throws {
+        let appDB = try AppDatabase.inMemory()
+        let remote = FakeRemote(clubID: clubId)
+        // Child enqueued first (earlier created_at) to prove ordering follows
+        // the table registry, not created_at / hash order.
+        try appDB.write { db in
+            try Outbox.enqueue(db: db, table: "crew_members", pk: "c-1|p-1", op: "insert", payload: Data("m".utf8))
+        }
+        try appDB.write { db in
+            try Outbox.enqueue(db: db, table: "crews", pk: "c-1", op: "insert", payload: Data("c".utf8))
+        }
+
+        try await SyncEngine(db: appDB, remote: remote).syncAll()
+
+        let log = await remote.writeLog
+        let crews = try #require(log.firstIndex(of: "crews"))
+        let members = try #require(log.firstIndex(of: "crew_members"))
+        #expect(crews < members)
+    }
+
+    // MARK: - Toggle collapse (net final op wins)
+
+    /// remove-then-re-add of the same key before any sync pushes only the
+    /// final insert — the superseded delete never fires, so the row isn't
+    /// wrongly removed server-side.
+    @Test func togglingAKeyToReAddPushesOnlyTheFinalUpsert() async throws {
+        let appDB = try AppDatabase.inMemory()
+        let remote = FakeRemote(clubID: clubId)
+        try appDB.write { db in
+            try OutboxEntry(id: "e1", tableName: "crew_members", pk: "c-1|p-1", op: "delete",
+                            payload: Data("old".utf8), createdAt: PostgREST.formatDate(t0)).insert(db)
+            try OutboxEntry(id: "e2", tableName: "crew_members", pk: "c-1|p-1", op: "insert",
+                            payload: Data("new".utf8), createdAt: PostgREST.formatDate(t0.addingTimeInterval(1))).insert(db)
+        }
+
+        try await SyncEngine(db: appDB, remote: remote).syncAll()
+
+        #expect(await remote.pushedByTable["crew_members"] == [Data("new".utf8)])
+        #expect(await remote.deletedByTable["crew_members"] == nil)
+        #expect(try appDB.read { db in try OutboxEntry.fetchCount(db) } == 0)
+    }
+
+    /// add-then-remove of the same key before any sync pushes only the final
+    /// delete — the superseded insert never fires.
+    @Test func togglingAKeyToDeletionPushesOnlyTheFinalDelete() async throws {
+        let appDB = try AppDatabase.inMemory()
+        let remote = FakeRemote(clubID: clubId)
+        try appDB.write { db in
+            try OutboxEntry(id: "e1", tableName: "crew_members", pk: "c-1|p-1", op: "insert",
+                            payload: Data("added".utf8), createdAt: PostgREST.formatDate(t0)).insert(db)
+            try OutboxEntry(id: "e2", tableName: "crew_members", pk: "c-1|p-1", op: "delete",
+                            payload: Data("gone".utf8), createdAt: PostgREST.formatDate(t0.addingTimeInterval(1))).insert(db)
+        }
+
+        try await SyncEngine(db: appDB, remote: remote).syncAll()
+
+        #expect(await remote.deletedByTable["crew_members"] == [Data("gone".utf8)])
+        #expect(await remote.pushedByTable["crew_members"] == nil)
+        #expect(try appDB.read { db in try OutboxEntry.fetchCount(db) } == 0)
     }
 }

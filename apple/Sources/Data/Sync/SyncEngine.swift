@@ -11,8 +11,14 @@
 //     re-encodes the `Date` through its own storage. See SyncableTable.swift
 //     for why that distinction matters. `sync_meta.last_sync` advances to
 //     the max pulled `updated_at` for that table.
-//  2. Drains the outbox: pushes every queued local write, grouped by table,
-//     and deletes each entry once its push succeeds.
+//  2. Drains the outbox: pushes every queued local write, grouped by table
+//     and processed in parent-before-child table order (SyncableTable.all)
+//     so a newly-inserted child never reaches the server ahead of the
+//     parent row it references. Within a table, entries are collapsed to
+//     the last queued op per primary key (the outbox is pending *state*, so
+//     only each row's final op matters), then routed by op: inserts/updates
+//     to `remote.push` (upsert), deletes to `remote.delete`. Every entry
+//     for a table is cleared once that table's push+delete succeed.
 //
 // LWW rule (kept intentionally simple, per the spec): **outbox entries win
 // until they're pushed.** While pulling, any row whose primary key
@@ -95,8 +101,37 @@ struct SyncEngine: Sendable {
         guard !entries.isEmpty else { return }
 
         let byTable = Dictionary(grouping: entries, by: \.tableName)
-        for (table, tableEntries) in byTable {
-            try await remote.push(table: table, rows: tableEntries.map(\.payload))
+
+        // Parent-before-child order (SyncableTable.all). Dictionary iteration
+        // order is nondeterministic, so grouping alone could push a child
+        // (crew_members, seats) before its parent (crews, heats) and trip a
+        // server FK check, aborting — and, with per-process-stable hashing,
+        // failing the retry identically until relaunch. Any table not in the
+        // registry drains last in a stable order so nothing is dropped.
+        let registryOrder = SyncableTable.all.map(\.tableName)
+        let orderedTables = registryOrder.filter { byTable[$0] != nil }
+            + byTable.keys.filter { !registryOrder.contains($0) }.sorted()
+
+        for table in orderedTables {
+            let tableEntries = byTable[table]!
+
+            // Collapse to the last queued op per primary key: the outbox is
+            // pending *state*, so a row toggled before this sync (add then
+            // remove, or remove then re-add) should reach the server as its
+            // net final op, never both. `entries` is created_at-ordered, so
+            // the last write into this map per pk is the newest. After
+            // collapsing each pk appears once, which is what makes it safe to
+            // batch all upserts and all deletes into two calls whose relative
+            // order can't resurrect or drop a toggled row.
+            var lastOpByPk: [String: OutboxEntry] = [:]
+            for entry in tableEntries { lastOpByPk[entry.pk] = entry }
+            let collapsed = Array(lastOpByPk.values)
+
+            let upserts = collapsed.filter { $0.op != "delete" }.map(\.payload)
+            let deletes = collapsed.filter { $0.op == "delete" }.map(\.payload)
+            try await remote.push(table: table, rows: upserts)
+            try await remote.delete(table: table, rows: deletes)
+
             try db.write { db in
                 for entry in tableEntries {
                     try entry.delete(db)

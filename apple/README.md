@@ -6,6 +6,11 @@ DEBUG-only gallery tab for reviewing it.
 
 **Prerequisites:** Xcode 26 (tested 26.1), [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
+**First-time setup:** copy `Sources/Data/App/Secrets.example.swift` to
+`Sources/App/Secrets.swift` (git-ignored) and fill in the Supabase URL + anon
+key — the app won't compile without it. See that template's header for the
+local-dev values printed by `supabase status`.
+
 **Build:** `cd apple && xcodegen generate`, then open `Paddltir.xcodeproj`
 and run the `Paddltir` scheme, or `xcodebuild -scheme Paddltir -destination
 'platform=iOS Simulator,name=iPhone 17 Pro' build`. `.xcodeproj`/`DerivedData/`

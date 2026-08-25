@@ -27,10 +27,16 @@
 // Upserting resolves conflicts on each table's primary key (the default
 // when `onConflict` is omitted), matching this schema's composite keys.
 //
-// `clubID` resolves the signed-in user's club from `profiles.club_id`,
-// queried once per instance and cached — this type is an `actor` (rather
-// than a plain struct/class) both because `RemoteStore` requires `Sendable`
-// and because the cache is mutable state shared across concurrent callers.
+// `delete(table:rows:)` handles the outbox's `"delete"` entries — never
+// `push`, which would re-upsert a removed row — issuing one PostgREST
+// DELETE per removed row, filtered to equality on that table's primary-key
+// columns only (see `primaryKeyColumns`).
+//
+// `clubID` resolves the signed-in user's club from `profiles.club_id` and
+// caches only a *successful*, non-nil resolution (see the property) — this
+// type is an `actor` (rather than a plain struct/class) both because
+// `RemoteStore` requires `Sendable` and because the cache is mutable state
+// shared across concurrent callers.
 
 import Foundation
 import Supabase
@@ -38,10 +44,14 @@ import Supabase
 actor SupabaseRemote: RemoteStore {
     private let client: SupabaseClient
 
-    /// `nil` = not yet resolved; `.some(nil)` = resolved, signed-in user has
-    /// no club yet. Distinguishes "haven't looked" from "looked, found none"
-    /// so a genuinely club-less user isn't re-queried every call.
-    private var cachedClubID: String??
+    /// The resolved club id, cached once known. Only a *successful*, non-nil
+    /// resolution is cached: a nil resolution (no session yet, or a profile
+    /// row with no `club_id`) is deliberately NOT remembered, so the very
+    /// first `sync()` that `RootView` fires before sign-in doesn't pin this
+    /// to nil for the whole process and dead-end every post-sign-in sync
+    /// until relaunch. Re-querying `profiles` once per foreground sync while
+    /// club-less is negligible and self-heals the moment the user joins one.
+    private var cachedClubID: String?
 
     init(client: SupabaseClient) {
         self.client = client
@@ -55,7 +65,9 @@ actor SupabaseRemote: RemoteStore {
                 return cachedClubID
             }
             let value = await fetchClubID()
-            cachedClubID = value
+            if value != nil {
+                cachedClubID = value
+            }
             return value
         }
     }
@@ -74,6 +86,25 @@ actor SupabaseRemote: RemoteStore {
         guard !rows.isEmpty else { return }
         let values = try rows.map { try JSONDecoder().decode(JSONObject.self, from: $0) }
         try await client.from(table).upsert(values, returning: .minimal).execute()
+    }
+
+    func delete(table: String, rows: [Data]) async throws {
+        guard !rows.isEmpty else { return }
+        let pkColumns = Self.primaryKeyColumns[table] ?? ["id"]
+        // One DELETE per row, filtered to equality on each primary-key
+        // column only (never the volatile columns in the payload). Deletes
+        // are rare and few — removing a crew member, clearing a seat — so a
+        // request apiece is fine and keeps composite keys unambiguous.
+        for row in rows {
+            guard let object = try JSONSerialization.jsonObject(with: row) as? [String: Any] else {
+                continue
+            }
+            var query = client.from(table).delete(returning: .minimal)
+            for column in pkColumns {
+                query = query.eq(column, value: Self.queryString(object[column]))
+            }
+            try await query.execute()
+        }
     }
 
     // MARK: - clubID
@@ -108,6 +139,32 @@ actor SupabaseRemote: RemoteStore {
 
     private static func timestampColumn(for table: String) -> String {
         createdAtOnlyTables.contains(table) ? "created_at" : "updated_at"
+    }
+
+    // MARK: - Primary-key columns (for delete filters)
+
+    /// Primary-key columns per table, mirroring the `primary key (...)`
+    /// clauses in supabase/migrations/20260822000100_types_tables.sql. Used
+    /// to build precise DELETE filters from a removed row's payload. Any
+    /// table absent here falls back to a single `id` column (every
+    /// single-key table in this schema keys on `id`).
+    private static let primaryKeyColumns: [String: [String]] = [
+        "crew_members": ["crew_id", "paddler_id"],
+        "availability": ["session_id", "paddler_id"],
+        "seats": ["heat_id", "bench", "side"],
+        "heat_reserves": ["heat_id", "paddler_id"],
+        "category_rules": ["club_id", "category", "boat_size"],
+    ]
+
+    /// Renders a JSON primary-key value as a PostgREST filter string.
+    /// PostgREST compares `eq.` filters textually and casts to the column
+    /// type, so a stringified id/int/enum all match correctly.
+    private static func queryString(_ value: Any?) -> String {
+        switch value {
+        case let s as String: return s
+        case let n as NSNumber: return n.stringValue
+        default: return ""
+        }
     }
 
     // MARK: - Splitting the PostgREST array response
