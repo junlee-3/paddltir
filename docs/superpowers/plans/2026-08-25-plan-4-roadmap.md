@@ -32,9 +32,13 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
       an offline-first cache. 59 tests. Final review + 3 cross-cutting fixes (delete-routing, deterministic
       drain order, clubID cache-on-success). **First-time setup:** copy `Sources/Data/App/Secrets.example.swift`
       → `Sources/App/Secrets.swift` (git-ignored) or the app won't compile.
-- [ ] **4c — Auth & onboarding** `2026-08-25-plan-4c-auth.md`
-      Sign in with Apple + email magic link (Supabase Auth); create-club / join-with-code (RPCs);
-      claim-your-name; Settings (club, invite code/share, category rules, sign out). Verify: flow screenshots.
+- [x] **4c — Auth & onboarding (MERGED cd2579b)** `2026-08-25-plan-4c-auth.md`
+      3-state `AuthState` gate over RootView (`SessionController`); `ClubService` wraps create_club/join_club/
+      claimable_paddlers/regenerate_invite_code; `AppModel` shares one SupabaseClient; AuthView (SIWA + magic
+      link + DEBUG dev sign-in), OnboardingView (create/join+claim), SettingsView (invite code/share/regen,
+      rules, sign out). 66 tests + gated live onboarding e2e (verified PASS vs local stack). **SIWA + magic-link
+      functional verification DEFERRED to a signed go-live build** (entitlements need signing; magic link needs
+      SMTP/deep-links) — built & rendered, not runnable unsigned. Residual polish → 4d/4e (see PROGRESS).
 - [ ] **4d — Schedule & availability** `2026-08-25-plan-4d-schedule.md`
       Schedule tab, Up-next hero, session detail (training + race day), availability list + coach override,
       record-erg quick action. Verify: screenshots against the demo data.

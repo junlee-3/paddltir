@@ -4,7 +4,7 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Building the SwiftUI coach app (Plan 4). Foundation + data layer MERGED; next = auth & onboarding (4c).**
+**Building the SwiftUI coach app (Plan 4). Foundation + data + auth MERGED; next = Schedule & availability (4d).**
 
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
@@ -14,6 +14,24 @@ MERGED TO MAIN:
   type scale, primitives + domain components: SeatTile/TelemetryGrid/BalanceBeam/HeatSwitcher/AvailabilityRing),
   Design System gallery (screenshot verified vs concept), real Liquid Glass, LIGHT MODE ENFORCED. Builds
   iOS+macOS, reproducible from apple/project.yml. Final review clean.
+- **Plan 4c — Auth & onboarding (commit cd2579b).** 3-state AuthState gate over RootView driven by
+  SessionController (subscribes to supabase-swift authStateChanges, resolves club via ClubService);
+  AppModel composition root shares ONE SupabaseClient between sync (AppEnvironment, now @MainActor) and auth.
+  ClubService wraps create_club/join_club/claimable_paddlers/regenerate_invite_code (decode via PostgREST.decoder
+  / .execute().data, never .value). AuthView (Sign in with Apple + email magic link + DEBUG dev sign-in),
+  OnboardingView (create club / join-with-code + claim-your-name), SettingsView (invite code + ShareLink +
+  regenerate, category rules read-only, sign out). 66 tests; the gated live onboarding round-trip
+  (signUp→create_club→8-char invite→join_club) VERIFIED PASS against the local stack. iOS+macOS build.
+  **SIWA + magic-link functional verification DEFERRED to a signed go-live build** (entitlements need code
+  signing, which is off for the unsigned CI/sim build; magic link needs SMTP + deep-link redirect) — both are
+  built and render, just not runnable unsigned. AuthView screenshot surfaced to Jun.
+  DEFERRED POLISH (do in 4d/4e or a Settings pass): add a `.dsMono` typography token (SettingsView currently
+  uses the one sanctioned Font.system for the invite code); wrap MainShell tabs in NavigationStack (so
+  `.navigationTitle` renders + placeholders get nav chrome); surface errors in SettingsView.load()/regenerate()
+  (currently `try?`-swallowed); drive the post-onboarding gate flip from createClub's returned Club (more robust
+  than re-querying); email-field placeholder renders teal (RootView `.tint` bleed) → make it muted grey;
+  reorder DEBUG Design tab after Settings. NOTE: `@MainActor AppEnvironment` + `sync()` wired into RootView
+  (`.task` + scenePhase `.active`) — the 4b carry-forward is DONE.
 - **Plan 4b — Data layer & sync (commit a7e83d2).** Row models (snake_case Codable) + GRDB local store &
   migrations; PostgREST date pipeline (wire→model→GRDB, never raw); DomainMapping to PaddltirCore; offline
   sync (pull-since / outbox / LWW=outbox-wins-until-pushed); Squad/Crew/Schedule/Lineup repositories
@@ -36,12 +54,13 @@ BUILD MECHANICS (learned): XcodeGen (apple/project.yml → run `xcodegen generat
 UI verify = boot iPhone 17 Pro sim + `xcrun simctl io ... screenshot`. Real Liquid Glass API:
 `.glassEffect(.regular, in: .rect(cornerRadius:))` + `GlassEffectContainer(spacing:content:)` (iOS/macOS 26).
 
-REMAINING (in order): **Plan 4c** (auth/onboarding) → 4d Schedule/availability → 4e Crews/Squad →
-4f Lineup editor (the hero) → 4g coach-app integration.
-CARRY-FORWARD from 4b review (folded into roadmap 4d/4e): 4d — @MainActor AppEnvironment + wire sync() into
-RootView.task, rename upcomingSessions()→sessions(); 4e — add heat drummer/sweep persistence (no repo writes
-`heats` yet). Deferred to Plan 6: ISO8601 ms-truncation causes newest row to re-pull each sync (idempotent);
-splitRows returns [] on non-array response; live push never exercised.
+REMAINING (in order): **Plan 4d** (Schedule/availability) → 4e Crews/Squad → 4f Lineup editor (the hero) →
+4g coach-app integration.
+CARRY-FORWARD: 4d — rename ScheduleRepository.upcomingSessions()→sessions() (4b review); wrap MainShell tabs
+in NavigationStack (4c); [DONE in 4c: @MainActor AppEnvironment + sync() wired into RootView]. 4e — add heat
+drummer/sweep persistence (no repo writes `heats` yet). Plus the 4c deferred-polish list above.
+Deferred to Plan 6: ISO8601 ms-truncation causes newest row to re-pull each sync (idempotent); splitRows
+returns [] on non-array response; live PUSH never exercised (live PULL + onboarding RPCs now are).
 Then Plan 5 (paddler PWA), GO-LIVE (hosted Supabase project ap-southeast-2 + Vercel deploy), Plan 6
 end-to-end integration (incl. deferred solver hardening: UUID-validate heatId, httpx reuse, auth-before-conn).
 Execution: subagent-driven-development on a per-sub-plan branch/worktree, merge to main after each final review.
