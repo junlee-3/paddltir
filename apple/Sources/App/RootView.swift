@@ -56,6 +56,9 @@ private struct MainShell: View {
             SquadPlaceholder()
                 .tabItem { Label("Squad", systemImage: "person.3") }
                 .tag(2)
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(4)
             #if DEBUG
             DesignSystemGallery()
                 .tabItem { Label("Design", systemImage: "paintpalette") }
@@ -74,6 +77,7 @@ private struct MainShell: View {
         case .schedule: SchedulePlaceholder()
         case .crews: CrewsPlaceholder()
         case .squad: SquadPlaceholder()
+        case .settings: SettingsView()
         }
     }
     #endif
@@ -81,13 +85,14 @@ private struct MainShell: View {
 
 #if os(macOS)
 private enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
-    case schedule = "Schedule", crews = "Crews", squad = "Squad"
+    case schedule = "Schedule", crews = "Crews", squad = "Squad", settings = "Settings"
     var id: String { rawValue }
     var systemImage: String {
         switch self {
         case .schedule: "calendar"
         case .crews: "figure.water.fitness"
         case .squad: "person.3"
+        case .settings: "gearshape"
         }
     }
 }
