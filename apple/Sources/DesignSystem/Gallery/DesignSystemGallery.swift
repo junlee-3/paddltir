@@ -20,6 +20,7 @@ struct DesignSystemGallery: View {
                 telemetrySection
                 heatAndRingSection
                 pillSection
+                statusBannerSection
             }
             .padding(DS.Space.l)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -259,6 +260,17 @@ struct DesignSystemGallery: View {
                     Pill("Accent", tint: DS.accent.opacity(0.15))
                 }
                 MicroLabel("Micro label sample")
+            }
+        }
+    }
+
+    // MARK: - Status banner
+
+    private var statusBannerSection: some View {
+        section("Status banner") {
+            VStack(alignment: .leading, spacing: DS.Space.s) {
+                StatusBanner("Couldn't sync — showing saved data.", actionTitle: "Retry") {}
+                StatusBanner("Couldn't save that change.")
             }
         }
     }

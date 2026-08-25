@@ -6,29 +6,26 @@ import SwiftUI
 
 struct SquadView: View {
     @Environment(AppModel.self) private var app
-    @State private var model: SquadViewModel?
+    @State private var model: SquadViewModel
     @State private var adding = false
+
+    init(db: AppDatabase) { _model = State(initialValue: SquadViewModel(db: db)) }
 
     var body: some View {
         NavigationStack {
-            Group { if let model { content(model) } else { ProgressView() } }
+            content
                 .navigationTitle("Squad")
                 .background(DS.bg)
                 .toolbar {
-                    ToolbarItem(placement: .primaryAction) { Button { adding = true } label: { Image(systemName: "plus") } }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { adding = true } label: { Image(systemName: "plus") }
+                            .disabled(app.environment.clubId == nil)
+                    }
                 }
-                .navigationDestination(for: PaddlerWithErg.self) { pw in PaddlerDetailView(paddlerId: pw.row.id) }
+                .navigationDestination(for: PaddlerWithErg.self) { pw in PaddlerDetailView(paddlerId: pw.row.id, db: app.environment.db) }
                 .sheet(isPresented: $adding) {
-                    // Ruling E1: `db.read { ... }` returns `String?` (Club.fetchOne(db)?.id),
-                    // and `try?` around a throwing call wraps that in another Optional —
-                    // i.e. this is `String??`. `?? nil` flattens it to `String?`, then
-                    // `?? ""` unwraps to a plain `String` for PaddlerFormView's `clubId`.
-                    let clubId = ((try? app.environment.db.read { db in try Club.fetchOne(db)?.id }) ?? nil) ?? ""
-                    if !clubId.isEmpty {
-                        PaddlerFormView(clubId: clubId, existing: nil) { row in
-                            _ = try? await SquadRepository(db: app.environment.db).upsert(row)
-                            await model?.load()
-                        }
+                    if let clubId = app.environment.clubId {
+                        PaddlerFormView(clubId: clubId, existing: nil) { row in await model.add(row) }
                     } else {
                         VStack(spacing: DS.Space.m) {
                             Text("No club yet").font(.dsBody).foregroundStyle(DS.ink2)
@@ -38,28 +35,34 @@ struct SquadView: View {
                     }
                 }
         }
-        .task {
-            if model == nil { model = SquadViewModel(db: app.environment.db) }
-            await model?.load()
-        }
-        .onChange(of: app.environment.syncGeneration) {
-            Task { await model?.load() }
-        }
+        .task { await model.observe() }
     }
 
-    @ViewBuilder private func content(_ model: SquadViewModel) -> some View {
-        @Bindable var model = model
-        List {
-            Section {
-                Picker("Sort", selection: $model.sort) { ForEach(SquadSort.allCases) { Text($0.label).tag($0) } }
-                    .pickerStyle(.segmented)
-                Toggle("Linked only", isOn: $model.filter.linkedOnly)
+    @ViewBuilder private var content: some View {
+        if !model.isLoaded && model.all.isEmpty {
+            ProgressView()
+        } else {
+            @Bindable var model = model
+            List {
+                if let e = model.lastError {
+                    StatusBanner(e)
+                        .padding(.horizontal, DS.Space.l)
+                        .padding(.vertical, DS.Space.xs)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                }
+                Section {
+                    Picker("Sort", selection: $model.sort) { ForEach(SquadSort.allCases) { Text($0.label).tag($0) } }
+                        .pickerStyle(.segmented)
+                    Toggle("Linked only", isOn: $model.filter.linkedOnly)
+                }
+                ForEach(model.visible) { pw in
+                    NavigationLink(value: pw) { row(pw) }
+                }
             }
-            ForEach(model.visible) { pw in
-                NavigationLink(value: pw) { row(pw) }
-            }
+            .searchable(text: $model.filter.search)
         }
-        .searchable(text: $model.filter.search)
     }
 
     private func row(_ pw: PaddlerWithErg) -> some View {

@@ -26,14 +26,22 @@ struct LineupRepository: Sendable {
         self.db = db
     }
 
+    /// Shared fetch behind `heats(raceId:)` and `observeHeats(raceId:)`.
+    static func fetchHeats(_ db: Database, raceId: String) throws -> [Heat] {
+        try Heat
+            .filter(Column("race_id") == raceId)
+            .order(Column("sort_order"))
+            .fetchAll(db)
+    }
+
     /// A race's heats, in their configured display order.
     func heats(raceId: String) async throws -> [Heat] {
-        try db.read { db in
-            try Heat
-                .filter(Column("race_id") == raceId)
-                .order(Column("sort_order"))
-                .fetchAll(db)
-        }
+        try db.read { db in try Self.fetchHeats(db, raceId: raceId) }
+    }
+
+    /// Emits the current heats for a race, then again whenever heats change.
+    func observeHeats(raceId: String) -> ValueObservation<ValueReducers.Fetch<[Heat]>> {
+        ValueObservation.tracking { db in try Self.fetchHeats(db, raceId: raceId) }
     }
 
     /// A heat with its seats and reserves, or `nil` if `id` doesn't exist.
@@ -129,16 +137,42 @@ struct LineupRepository: Sendable {
         }
     }
 
-    /// Adds a heat to a race; `sort_order` is the next free slot.
+    /// Inserts one heat row and enqueues its outbox entry, in the caller's write
+    /// transaction — the single write+enqueue shape shared by every heat-creating
+    /// path (`createHeat`, both overloads, and `ScheduleRepository.createRace`'s
+    /// race-birth heat) so none of them can drift from the others.
+    static func insertHeat(_ db: Database, raceId: String, name: String, sortOrder: Int) throws -> Heat {
+        let row = Heat(id: UUID().uuidString, raceId: raceId, name: name, sortOrder: sortOrder,
+                       drummerId: nil, sweepId: nil, createdAt: Date(), updatedAt: nil)
+        try row.insert(db)
+        try Outbox.enqueue(db: db, table: Heat.databaseTableName, pk: row.syncPrimaryKey,
+                           op: "insert", payload: try PostgREST.encoder.encode(row))
+        return row
+    }
+
+    /// The next free `sort_order` for a race's heats: current max + 1, computed inside
+    /// the caller's write transaction. Shared by both `createHeat` overloads so a race
+    /// born with `sort_order == 1` (`ScheduleRepository.createRace`, via `insertHeat`
+    /// directly) can never collide with a heat added afterwards, named or not — and two
+    /// fast taps on either overload can't collide with each other either.
+    private static func nextSortOrder(_ db: Database, raceId: String) throws -> Int {
+        let existing = try Heat.filter(Column("race_id") == raceId).fetchAll(db)
+        return (existing.map(\.sortOrder).max() ?? 0) + 1
+    }
+
+    /// Adds a named heat to a race; `sort_order` is `nextSortOrder`. Used by tests.
     func createHeat(raceId: String, name: String) async throws -> Heat {
         try db.write { db in
-            let order = try Heat.filter(Column("race_id") == raceId).fetchCount(db)
-            let row = Heat(id: UUID().uuidString, raceId: raceId, name: name, sortOrder: order,
-                           drummerId: nil, sweepId: nil, createdAt: Date(), updatedAt: nil)
-            try row.insert(db)
-            try Outbox.enqueue(db: db, table: Heat.databaseTableName, pk: row.syncPrimaryKey,
-                               op: "insert", payload: try PostgREST.encoder.encode(row))
-            return row
+            try Self.insertHeat(db, raceId: raceId, name: name, sortOrder: try Self.nextSortOrder(db, raceId: raceId))
+        }
+    }
+
+    /// Adds a heat to a race with an auto-generated "Heat N" name; `sort_order` is
+    /// `nextSortOrder`, so the name always matches its position.
+    func createHeat(raceId: String) async throws -> Heat {
+        try db.write { db in
+            let sortOrder = try Self.nextSortOrder(db, raceId: raceId)
+            return try Self.insertHeat(db, raceId: raceId, name: "Heat \(sortOrder)", sortOrder: sortOrder)
         }
     }
 

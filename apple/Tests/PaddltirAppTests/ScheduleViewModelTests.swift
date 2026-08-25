@@ -20,7 +20,6 @@ import Testing
         try seed(appDB)
         let vm = ScheduleViewModel(db: appDB, now: { self.now })
         await vm.load()
-        #expect(vm.clubId == "club-1")
         #expect(vm.upNext?.id == "soon")
         #expect(vm.upcoming.flatMap(\.sessions).map(\.id) == [])
         #expect(vm.past.flatMap(\.sessions).map(\.id) == ["past"])
@@ -31,7 +30,8 @@ import Testing
         try seed(appDB)
         let vm = ScheduleViewModel(db: appDB, now: { self.now })
         await vm.load()
-        await vm.createTraining(title: "New paddle", startsAt: now.addingTimeInterval(7200), venue: "Bay", notes: nil)
+        await vm.createTraining(clubId: "club-1", title: "New paddle", startsAt: now.addingTimeInterval(7200), venue: "Bay", notes: nil)
+        await vm.load()
         #expect(vm.upcoming.flatMap(\.sessions).contains { $0.title == "New paddle" })
     }
 }

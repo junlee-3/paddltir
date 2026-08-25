@@ -4,7 +4,6 @@
 // GenderRule), add/remove from the squad, and the crew's races.
 import SwiftUI
 import PaddltirCore
-import GRDB
 
 @MainActor @Observable
 final class CrewDetailModel {
@@ -15,74 +14,90 @@ final class CrewDetailModel {
     private(set) var squad: [PaddlerWithErg] = []
     private(set) var ruleVerdict: String?    // nil = OK or no rule
     private(set) var tally = GenderTally(women: 0, men: 0)
+    private(set) var isLoaded = false
+    private(set) var lastError: String?
 
     private let crews: CrewRepository
-    private let squadRepo: SquadRepository
     private let db: AppDatabase
+
     init(crewId: String, db: AppDatabase) {
-        self.crewId = crewId; self.db = db
-        self.crews = CrewRepository(db: db); self.squadRepo = SquadRepository(db: db)
+        self.crewId = crewId; self.db = db; self.crews = CrewRepository(db: db)
     }
 
     var memberIds: Set<String> { Set(members.map(\.row.id)) }
 
-    func load() async {
-        let loaded = try? await crews.crew(id: crewId)
-        crew = loaded?.crew
-        members = loaded?.members ?? []
-        races = (try? await crews.racesForCrew(crewId: crewId)) ?? []
-        squad = (try? await squadRepo.paddlers()) ?? []
-        tally = GenderTally.of(members)
-        if let crew {
-            let rule = try? db.read { db -> GenderRule? in
-                let key: [String: (any DatabaseValueConvertible)?] = ["club_id": crew.clubId, "category": crew.category.rawValue, "boat_size": BoatSize.standard.rawValue]
-                return DomainMapping.genderRule(try CategoryRule.fetchOne(db, key: key))
-            } ?? nil
-            ruleVerdict = rule?.violation(women: tally.women, men: tally.men)
+    /// Long-lived: run from the view's `.task`. Every DB change re-emits.
+    func observe() async {
+        do { for try await detail in crews.observeCrewDetail(id: crewId).values(in: db.dbQueue) { apply(detail) } }
+        catch {
+            lastError = error.localizedDescription
+            isLoaded = true
         }
+    }
+
+    /// One-shot (tests / previews). `CrewGenderRuleTests` calls this directly.
+    func load() async {
+        do { apply(try db.read { try CrewRepository.fetchCrewDetail($0, id: crewId) }) } catch { lastError = error.localizedDescription }
+    }
+
+    private func apply(_ d: CrewRepository.CrewDetail) {
+        crew = d.crew; members = d.members; races = d.races; squad = d.squad
+        tally = GenderTally.of(d.members)
+        ruleVerdict = d.rule?.violation(women: tally.women, men: tally.men)
+        isLoaded = true; lastError = nil
     }
 
     func toggle(_ paddlerId: String) async {
         var ids = memberIds
         if ids.contains(paddlerId) { ids.remove(paddlerId) } else { ids.insert(paddlerId) }
-        try? await crews.setMembers(crewId: crewId, paddlerIds: Array(ids))
-        await load()
+        do { try await crews.setMembers(crewId: crewId, paddlerIds: Array(ids)) } catch { lastError = error.localizedDescription }
+        // No reload: the observation delivers the new membership.
     }
 }
 
 struct CrewDetailView: View {
     let crewId: String
-    @Environment(AppModel.self) private var app
-    @State private var model: CrewDetailModel?
+    @State private var model: CrewDetailModel
     @State private var addingMembers = false
-    @State private var didLoad = false
+
+    init(crewId: String, db: AppDatabase) {
+        self.crewId = crewId
+        _model = State(initialValue: CrewDetailModel(crewId: crewId, db: db))
+    }
 
     var body: some View {
         Group {
-            if let model, model.crew != nil {
+            if model.crew != nil {
                 content(model)
-            } else if didLoad {
-                ScreenScaffold("Not found", note: "This record is no longer available.")
+            } else if model.isLoaded {
+                notFoundState(model)
             } else {
                 ProgressView()
             }
         }
-            .navigationTitle(model?.crew?.name ?? "Crew")
+            .navigationTitle(model.crew?.name ?? "Crew")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .background(DS.bg)
-            .task {
-                if model == nil { model = CrewDetailModel(crewId: crewId, db: app.environment.db) }
-                await model?.load()
-                didLoad = true
-            }
-            .sheet(isPresented: $addingMembers) { if let model { memberPicker(model) } }
+            .task { await model.observe() }
+            .sheet(isPresented: $addingMembers) { memberPicker(model) }
+    }
+
+    /// F2 (follow-up): a genuine "not found" (no `crew` row, no error) still gets the
+    /// plain empty state; a failed first read (`lastError != nil`) surfaces its banner
+    /// above it, so a real failure is never presented as "this record doesn't exist".
+    @ViewBuilder private func notFoundState(_ model: CrewDetailModel) -> some View {
+        VStack(spacing: DS.Space.m) {
+            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.xl) }
+            ScreenScaffold("Not found", note: "This record is no longer available.")
+        }
     }
 
     @ViewBuilder private func content(_ model: CrewDetailModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.m) {
+                if let e = model.lastError { StatusBanner(e) }
                 HairlineCard {
                     HStack {
                         Text("W \(model.tally.women) · M \(model.tally.men)").font(.dsHeadline).foregroundStyle(DS.ink)

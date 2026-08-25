@@ -14,57 +14,74 @@ final class TrainingDetailModel {
     let session: SessionRow
     private(set) var paddlers: [PaddlerWithErg] = []
     private(set) var availability: [String: Availability] = [:]   // paddlerId -> row
+    private(set) var isLoaded = false
+    private(set) var lastError: String?
     private let schedule: ScheduleRepository
     private let squad: SquadRepository
+    private let db: AppDatabase
 
     init(session: SessionRow, db: AppDatabase) {
         self.session = session
+        self.db = db
         self.schedule = ScheduleRepository(db: db)
         self.squad = SquadRepository(db: db)
     }
 
     var headcount: Headcount { Headcount.compute(availability: Array(availability.values), squadSize: paddlers.count) }
 
-    func load() async {
-        paddlers = (try? await squad.paddlers()) ?? []
-        let rows = (try? await schedule.session(id: session.id))?.availability ?? []
-        availability = Dictionary(uniqueKeysWithValues: rows.map { ($0.paddlerId, $0) })
+    /// Long-lived: run from the view's `.task`. Every DB change re-emits.
+    func observe() async {
+        do { for try await detail in schedule.observeTrainingDetail(sessionId: session.id).values(in: db.dbQueue) { apply(detail) } }
+        catch {
+            lastError = error.localizedDescription
+            isLoaded = true
+        }
+    }
+
+    private func apply(_ d: ScheduleRepository.TrainingDetail) {
+        paddlers = d.paddlers
+        availability = Dictionary(uniqueKeysWithValues: d.availability.map { ($0.paddlerId, $0) })
+        isLoaded = true; lastError = nil
     }
 
     func setStatus(_ status: AvailabilityStatus, for paddlerId: String) async {
-        try? await schedule.setAvailability(sessionId: session.id, paddlerId: paddlerId, status: status,
-                                            note: availability[paddlerId]?.note)
-        await load()
+        do {
+            try await schedule.setAvailability(sessionId: session.id, paddlerId: paddlerId, status: status,
+                                               note: availability[paddlerId]?.note)
+        } catch { lastError = error.localizedDescription }
+        // No reload: the observation delivers the new availability.
     }
 
     func recordErg(paddlerId: String, metres: Int) async {
-        _ = try? await squad.recordErg(paddlerId: paddlerId, metres: metres, testedAt: Date(), recordedBy: nil)
-        await load()
+        do { _ = try await squad.recordErg(paddlerId: paddlerId, metres: metres, testedAt: Date(), recordedBy: nil) }
+        catch { lastError = error.localizedDescription }
+        // No reload: the observation delivers the new erg test.
     }
 }
 
 struct TrainingDetailView: View {
     let session: SessionRow
-    @Environment(AppModel.self) private var app
-    @State private var model: TrainingDetailModel?
+    @State private var model: TrainingDetailModel
     @State private var ergTarget: PaddlerWithErg?
+
+    init(session: SessionRow, db: AppDatabase) {
+        self.session = session
+        _model = State(initialValue: TrainingDetailModel(session: session, db: db))
+    }
 
     var body: some View {
         Group {
-            if let model { content(model) } else { ProgressView() }
+            if model.isLoaded { content(model) } else { ProgressView() }
         }
         .navigationTitle(session.title)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .background(DS.bg)
-        .task {
-            if model == nil { model = TrainingDetailModel(session: session, db: app.environment.db) }
-            await model?.load()
-        }
+        .task { await model.observe() }
         .sheet(item: $ergTarget) { target in
             RecordErgSheet(paddlerName: target.row.name) { metres in
-                await model?.recordErg(paddlerId: target.row.id, metres: metres)
+                await model.recordErg(paddlerId: target.row.id, metres: metres)
             }
         }
     }
@@ -72,6 +89,7 @@ struct TrainingDetailView: View {
     @ViewBuilder private func content(_ model: TrainingDetailModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.m) {
+                if let e = model.lastError { StatusBanner(e) }
                 headcountCard(model.headcount)
                 ForEach(model.paddlers, id: \.row.id) { p in
                     availabilityRow(p, status: model.availability[p.row.id]?.status, model: model)
