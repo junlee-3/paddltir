@@ -1,9 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
+    "web": { "root": "web/" },
     "solver": { "root": "solver/", "entrypoint": "main:app" }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "solver" } }
+    { "source": "/api/(.*)", "destination": { "service": "solver" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
   ]
 }

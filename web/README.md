@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Paddltir — paddler PWA
 
-## Getting Started
+Next.js App Router + Supabase (`@supabase/ssr`) + Tailwind v4. Mobile-first, installable, realtime.
 
-First, run the development server:
+## Local setup
+1. From the repo root: `supabase start`, `supabase db reset`, then load demo data:
+   `/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/seed_dev.sql`
+   (`psql` isn't on `PATH` by default on macOS/Homebrew; if you have a different client, `docker exec -i supabase_db_paddltir psql -U postgres -d postgres -f -  < supabase/seed_dev.sql` also works.)
+2. `cp .env.example .env.local` and paste the anon key from `supabase status`.
+3. `pnpm install && pnpm dev` → http://localhost:3000 — sign in with the dev form as `lily@paddltir.dev` / `password123`
+   (the form only renders when `NEXT_PUBLIC_PADDLTIR_DEV_LOGIN=1`; never set it on Vercel).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Commands
+`pnpm typecheck` · `pnpm lint` · `pnpm test` (Vitest, `lib/`) · `pnpm build` · `PADDLTIR_LIVE_SUPABASE=1 pnpm e2e` (Playwright smoke vs the local stack) · `pnpm icons` (regenerate PNG icons from `scripts/*.svg`).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Shape
+- `app/` routes: `/login` (magic link) · `/join` (invite code → claim your name) · `/` next event (+ `/session/[id]`) · `/availability` · `/erg` · `/profile` · `/auth/*` · `/offline`.
+- `lib/` pure, unit-tested rules (boat sections mirror `PaddltirCore.Boat`; lineup lookup; gating; validation). No scoring — paddlers *see* lineups.
+- Server Components read through the user's cookie session (RLS authorises); Server Actions write; `proxy.ts` refreshes the session.
+- Realtime `postgres_changes` on `sessions/heats/seats/heat_reserves/availability` → `router.refresh()`.
+- Regenerate DB types after a migration: `supabase gen types typescript --local --schema public > lib/db/database.types.ts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## End-to-end test
+`e2e/smoke.spec.ts` is a Playwright smoke test that signs in, checks the next event and boat diagram, toggles availability, logs an erg, and views the profile — against the real local Supabase stack and the demo seed. It's gated behind `PADDLTIR_LIVE_SUPABASE=1` (see `web/playwright.config.ts`) so `pnpm e2e` alone reports it skipped and CI without a live stack stays green. Run the local setup steps above first, then `PADDLTIR_LIVE_SUPABASE=1 pnpm e2e`. The test logs a 555 m self erg row and deletes it again in `test.afterAll` (via `docker exec supabase_db_paddltir psql …`) so the seed is left clean; that cleanup only runs when `PADDLTIR_LIVE_SUPABASE` is set.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Go-live (needs Jun)
+Vercel project `paddltir` with services `web/` + `solver/` (`vercel.json`); env `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL=https://paddltir.vercel.app`. Supabase Auth → add the Vercel URL to redirect URLs (already listed in `supabase/config.toml` for local).
