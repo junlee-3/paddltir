@@ -26,6 +26,16 @@ struct LineupRepository: Sendable {
         self.db = db
     }
 
+    /// A race's heats, in their configured display order.
+    func heats(raceId: String) async throws -> [Heat] {
+        try db.read { db in
+            try Heat
+                .filter(Column("race_id") == raceId)
+                .order(Column("sort_order"))
+                .fetchAll(db)
+        }
+    }
+
     /// A heat with its seats and reserves, or `nil` if `id` doesn't exist.
     func heat(id: String) async throws -> (heat: Heat, seats: [SeatRow], reserves: [HeatReserve])? {
         try db.read { db in

@@ -62,7 +62,7 @@ struct RaceDayDetailView: View {
                 await model.addRace(crewId: crewId, name: name, boatSize: size, distanceM: dist)
             } }
         }
-        .navigationDestination(for: Race.self) { race in LineupEditorPlaceholder(race: race) }
+        .navigationDestination(for: Race.self) { race in RaceHeatLoader(race: race) }
         .task {
             if model == nil { model = RaceDayModel(session: session, db: app.environment.db) }
             await model?.load()
@@ -145,10 +145,31 @@ struct RaceFormView: View {
     }
 }
 
-/// Stands in for the Plan 4f lineup editor so a race is tappable now.
-struct LineupEditorPlaceholder: View {
+/// Resolves a `Race` to its first heat — creating one ("Heat 1") if the race
+/// has none yet — then shows the lineup editor for it. A race may have 0+
+/// heats; this is the simplest correct wiring until multi-heat navigation
+/// (switching among a race's existing heats) lands in a later pass.
+struct RaceHeatLoader: View {
     let race: Race
+    @Environment(AppModel.self) private var app
+    @State private var heatId: String?
+
     var body: some View {
-        ScreenScaffold("Lineup", note: "\(race.name) — the lineup editor arrives in Plan 4f.")
+        Group {
+            if let heatId {
+                LineupEditorView(heatId: heatId, raceName: race.name)
+            } else {
+                ProgressView()
+            }
+        }
+        .task {
+            guard heatId == nil else { return }
+            let repo = LineupRepository(db: app.environment.db)
+            if let first = (try? await repo.heats(raceId: race.id))?.first {
+                heatId = first.id
+            } else if let created = try? await repo.createHeat(raceId: race.id, name: "Heat 1") {
+                heatId = created.id
+            }
+        }
     }
 }
