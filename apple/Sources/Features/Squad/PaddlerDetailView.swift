@@ -29,9 +29,18 @@ struct PaddlerDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model: PaddlerDetailModel?
     @State private var editing = false
+    @State private var didLoad = false
 
     var body: some View {
-        Group { if let model, let pw = model.paddler { content(model, pw) } else { ProgressView() } }
+        Group {
+            if let model, let pw = model.paddler {
+                content(model, pw)
+            } else if didLoad {
+                ScreenScaffold("Not found", note: "This record is no longer available.")
+            } else {
+                ProgressView()
+            }
+        }
             .navigationTitle(model?.paddler?.row.name ?? "Paddler")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -43,6 +52,7 @@ struct PaddlerDetailView: View {
                     model = PaddlerDetailModel(paddlerId: paddlerId, db: app.environment.db, clubId: clubId)
                 }
                 await model?.load()
+                didLoad = true
             }
     }
 
