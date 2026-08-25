@@ -4,39 +4,18 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule + Crews/Squad + Lineup editor MERGED; NOW EXECUTING Plan 4g (integration & polish) — IN PROGRESS.**
+**PLAN 4 (the SwiftUI coach app) COMPLETE — 4a–4g all merged (main 59a2a85). NOW EXECUTING Plan 4h (quality pass, Fable-authored) — then Plan 5 (paddler PWA), then go-live.**
 
-**RESUME HERE (overnight autonomous run, 2026-08-26 — Fable 5):** Plan 4g is mid-execution via subagent-driven-development.
-- Plan: `docs/superpowers/plans/2026-08-25-plan-4g-integration-polish.md` (6 tasks). Worktree: `.worktrees/plan-4g-polish`
-  (branch `plan-4g-polish`, base c202403). **Copy `apple/Sources/App/Secrets.swift` into it if missing** (git-ignored).
-- **The ledger is the source of truth for what is next:** `.superpowers/sdd/2026-08-25-plan-4g-integration-polish/progress.md`
-  — its Task log's LAST lines say exactly where the loop is (tasks with a `complete` line are DONE; a `fix round` line means
-  resume that loop; a "dispatched" line with no result means the subagent died — re-dispatch it from its `task-N-brief.md`).
-- Process per task: implementer subagent → `scripts/review-package` → reviewer → fix loop → ledger `complete` line. Final
-  whole-branch review → fast-forward merge to main → verify merged tree → update this file + roadmap → delete worktree/branch/ledger.
-- After 4g merges: execute **Plan 4h** (`docs/superpowers/plans/2026-08-26-plan-4h-quality-pass.md`, already written) the same
-  way (new worktree `.worktrees/plan-4h-quality`), then Plan 5 (PWA). STOP before go-live (needs Jun's credentials).
-- Model note: commits through Plan 4b were Fable 5; Plans 4c–4g Tasks 1–5 were Opus 4.8; 4g wrap-up + 4h onward are Fable 5.
-
-**PLAN 4h CANDIDATE — "quality pass" on the 4c–4g app layer (Jun wants premium-grade code; Opus's self-assessment
-of its own weakest points, for Fable to plan against). Do this AFTER 4g merges, BEFORE Plan 5. NOT a rewrite —
-the engine/repos/auth/sync wiring are verified (92 tests, live e2e); target the UI/architecture layer:**
-1. **Reactive data flow via GRDB `ValueObservation`** (biggest win): replace the load-once-`.task` + `AppEnvironment.
-   syncGeneration` reload hack. Screens observe the DB → auto-update on sync/writes; deletes the "empty until reload"
-   bug class, the `didLoad` boilerplate, and the VM `load()` re-entrancy issue. (Squad screenshot needed a 2-launch trick
-   because of this.)
-2. **One view-model ownership pattern**: every screen repeats `@State private var model: X?` + `if let … else
-   ProgressView()` + lazy creation in `.task`; standardise (create once, inject repos / a small factory on AppModel).
-3. **Error handling**: `try?` swallowed everywhere; the `all = (try? …) ?? []` idiom CLEARS state on a failed read
-   (anti-offline-first) — keep last-good state + a non-blocking error surface (banner), incl. SettingsView regenerate,
-   RaceHeatLoader, PaddlerDetail/CrewDetail not-found.
-4. **Dedupe boilerplate**: club-id `String??` flatten copy-pasted 4× (SquadView/PaddlerDetail/CrewsVM/…); the
-   detail-model shape 4× (Paddler/Crew/Training/RaceDay); `didLoad` 4×. Also GenderBadge reuse in the editor HUD.
-5. **Premium editor interactions** (the spec's hero): drag-and-drop w/ spring+haptics, swap animation, section-band
-   shading, long-press menu (lock/drummer/sweep), redo, multi-heat switcher nav (HeatSwitcher "+" is inert), reserves
-   "unavailable today" dimming, Mac centred-hull + right-inspector; Optimise once the solver is deployed (go-live).
-6. Smaller: surface side/gender/role squad filter chips (model supports them); availability note editing; erg
-   `recordedBy`→current coach; per-heat boat-size gender check; `.dsMono` everywhere; a11y audit; view snapshot tests.
+**RESUME HERE (overnight autonomous run, 2026-08-26 — Fable 5):** Plan 4h is executing via subagent-driven-development.
+- Plan: `docs/superpowers/plans/2026-08-26-plan-4h-quality-pass.md` (8 tasks). Worktree: `.worktrees/plan-4h-quality`
+  (branch `plan-4h-quality`, from main after 59a2a85). **Copy `apple/Sources/App/Secrets.swift` into it if missing.**
+- **Ledger = source of truth for what's next:** `.superpowers/sdd/2026-08-26-plan-4h-quality-pass/progress.md`
+  (pre-flight rulings H1–H3 + carried 4g-review recs at the top; Task log at the bottom — resume at the first task
+  without a `complete` line; a "dispatched" line with no result = the subagent died → re-dispatch from `task-N-brief.md`).
+- Process per task: implementer → `scripts/review-package` → reviewer → fix loop → ledger `complete`. Final whole-branch
+  review (fable) → merge (regular merge commit if main moved) → verify merged tree → docs → cleanup.
+- After 4h: Plan 5 (PWA). STOP before go-live (needs Jun's credentials). Model note: through 4b = Fable 5; 4c–4g T1–5 = Opus 4.8;
+  4g wrap-up + 4h onward = Fable 5 (see git trailers).
 
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
@@ -46,6 +25,14 @@ MERGED TO MAIN:
   type scale, primitives + domain components: SeatTile/TelemetryGrid/BalanceBeam/HeatSwitcher/AvailabilityRing),
   Design System gallery (screenshot verified vs concept), real Liquid Glass, LIGHT MODE ENFORCED. Builds
   iOS+macOS, reproducible from apple/project.yml. Final review clean.
+- **Plan 4g — Integration & polish (merge 59a2a85; branch head bc14af5).** Sync-completion refresh (AppEnvironment.
+  syncGeneration → tabs reload; fresh-install SINGLE-launch screenshots PROVE Schedule/Squad/Crews populate); empty/
+  error states replace infinite spinners (editor, RaceHeatLoader, paddler/crew detail); empty-seat swap guard + empty-
+  clubId guard + 3 tests (95 total); `.dsMono` token (the only Font.system, in Typography) + AuthView placeholder fixed
+  via an explicit `Text(verbatim:)` prompt (tint/foregroundStyle did NOT work — screenshot gate caught it); complete
+  VoiceOver labels on hull seats (a review caught that the outer label had been overriding SeatTile's richer one — fixed).
+  Final review (fable) caught a wrong empty-state message (Race.crewId is non-optional → "crew not synced" is the real
+  cause) — fixed. Deferred to 4h: ValueObservation replaces syncGeneration; contextual a11y hints; weight rounding parity.
 - **Plan 4f — Lineup editor, the hero (commit 3edcc81).** The lineup editor over PaddltirCore + GRDB.
   ENGINE (fully TDD, 92 tests): LineupRepository saveHeat/createHeat/heats(raceId:) (drummer/sweep persistence,
   the 4b/4d carry-forward); LineupViewModel (@MainActor) — loads a heat's PlacementRequest+Heat, holds a

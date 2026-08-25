@@ -70,8 +70,12 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
       redo; long-press lock/drummer/sweep menu; section-band shading (label-only today); empty/error state when
       placementRequest is nil (editor spins); GenderBadge reuse; two-empty-seat swap no-op guard; "unavailable
       today" reserve dimming; heats(raceId:) test. Mac centred-hull + right-inspector layout also 4g.
-- [ ] **4g — Coach app integration & polish** end-to-end against merged backend, offline smoke,
-      verification-before-completion, Mac layout pass, accessibility pass. (write after 4f)
+- [x] **4g — Coach app integration & polish (MERGED 59a2a85)** `2026-08-25-plan-4g-integration-polish.md`
+      Sync-completion refresh (screens populate on a FRESH single launch — screenshot-proven), empty/error states
+      replace infinite spinners, empty-seat swap + empty-clubId guards + 3 tests, `.dsMono` token + the AuthView
+      placeholder fix (explicit verbatim prompt), complete VoiceOver labels on hull seats. 95 tests + gated live e2e.
+      Two task-review fix rounds (a11y label regression; placeholder) + one final-review fix wave (accurate editor
+      empty-state copy; dismissible no-club sheet). **PLAN 4 (COACH APP) COMPLETE.** Next: Plan 4h quality pass.
 
 ## Cross-cutting contracts (every sub-plan honours)
 - Import `PaddltirCore` for ALL domain logic (scoring, greedy, suggestions, validation) — no logic in the app.
