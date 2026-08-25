@@ -79,4 +79,16 @@ struct SquadRepository: Sendable {
             )
         }
     }
+
+    /// Records a coach-entered 2-minute erg result (`metres`) for a paddler.
+    func recordErg(paddlerId: String, metres: Int, testedAt: Date, recordedBy: String?) async throws -> ErgTest {
+        let row = ErgTest(id: UUID().uuidString, paddlerId: paddlerId, testedAt: testedAt,
+                          metres: metres, source: .coach, recordedBy: recordedBy, createdAt: Date())
+        try db.write { db in
+            try row.insert(db)
+            try Outbox.enqueue(db: db, table: ErgTest.databaseTableName, pk: row.syncPrimaryKey,
+                               op: "insert", payload: try PostgREST.encoder.encode(row))
+        }
+        return row
+    }
 }
