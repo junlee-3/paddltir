@@ -49,11 +49,16 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
       **Deferred to 4g:** screens don't reload when background sync completes (load once via `.task`) — add a
       sync-completion refresh; ScheduleViewModel.load() re-entrancy guard. DEBUG-only auto-sign-in + in-memory
       auth storage added (gated on PADDLTIR_DEBUG_AUTOSIGNIN) for signed-in screenshots.
-- [ ] **4e — Crews & Squad** `2026-08-25-plan-4e-crews-squad.md`
-      Crews tab + crew detail (members, gender-rule check, races history); Squad roster table (sort/filter),
-      paddler detail (edit, erg history sparkline, availability, invite/link). Verify: screenshots.
-      **Carry-forward from 4b review:** add heat drummer/sweep persistence — `LineupRepository` writes `seats`
-      but no repository writes `heats`, so a drummer/sweep assignment can't be saved yet (needed by the 4f editor).
+- [x] **4e — Crews & Squad (MERGED 1d8dbca)** `2026-08-25-plan-4e-crews-squad.md`
+      Squad tab (searchable/sortable roster; paddler detail with erg-history sparkline via Swift Charts, edit,
+      archive; add/edit paddler) + Crews tab (crew cards; detail with members, IDBF gender-rule check reusing
+      PaddltirCore.GenderRule, add/remove-from-squad, races; create crew). Repo adds: SquadRepository.ergHistory;
+      CrewRepository createCrew/racesForCrew/summaries. Pure SquadQuery + GenderTally. 84 tests + gated live e2e
+      verified; Squad+Crews screenshots surfaced (real seed). DEBUG PADDLTIR_DEBUG_TAB env for screenshots.
+      **Carry-forward to 4f/4g:** add heat drummer/sweep persistence (LineupRepository writes `seats` but nothing
+      writes `heats` — needed by the 4f editor); a CrewDetailModel gender-rule-verdict unit test; guard SquadView's
+      add-sheet on a non-empty clubId (currently falls back to ""); boat-size-specific gender check (4f); surface
+      the side/gender/role squad filter chips (model already supports them).
 - [ ] **4f — Lineup editor (the hero)** `2026-08-25-plan-4f-editor.md`
       Races/heats; the hull grid; seat **drag** (spring + haptic) and **tap-tap**; the **Balance HUD**
       telemetry (emerald/red verdicts + balance beam) driven by `PaddltirCore` on every change; reserves

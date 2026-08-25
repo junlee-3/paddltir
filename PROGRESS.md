@@ -4,7 +4,7 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule MERGED; next = Crews & Squad (4e).**
+**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule + Crews/Squad MERGED; next = Lineup editor (4f, the hero).**
 
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
@@ -14,6 +14,16 @@ MERGED TO MAIN:
   type scale, primitives + domain components: SeatTile/TelemetryGrid/BalanceBeam/HeatSwitcher/AvailabilityRing),
   Design System gallery (screenshot verified vs concept), real Liquid Glass, LIGHT MODE ENFORCED. Builds
   iOS+macOS, reproducible from apple/project.yml. Final review clean.
+- **Plan 4e — Crews & Squad (commit 1d8dbca).** SQUAD: searchable/sortable/filterable roster (SquadView over
+  SquadViewModel + pure SquadQuery/GenderTally); paddler detail (fields, erg-history sparkline via Swift Charts,
+  invite/link status, archive) + create/edit form (SquadRepository.upsert); SquadRepository.ergHistory added.
+  CREWS: crew cards (CrewsView over CrewRepository.summaries — member count + soonest-future race); crew detail
+  (members with chips, IDBF gender-rule check reusing PaddltirCore.GenderRule.violation for (category, standard),
+  add/remove-from-squad via setMembers, races) + create-crew form; CrewRepository createCrew/racesForCrew/summaries.
+  Both placeholders replaced; 84 tests; gated live e2e verified vs seed; Squad+Crews screenshots surfaced. DEBUG
+  PADDLTIR_DEBUG_TAB env selects the launch tab (screenshots). Final review clean (Ready to merge: Yes).
+  **4f/4g carry-forward:** CrewDetailModel gender-rule-verdict unit test; guard SquadView add-sheet on non-empty
+  clubId (falls back to "" today); boat-size-specific gender check (4f); surface side/gender/role squad filter chips.
 - **Plan 4d — Schedule & availability (commit 3b13bf6).** Schedule tab: up-next glass hero (with headcount),
   day-grouped timeline, past collapsed, `+` create menu → SessionFormView (training/race-day); TrainingDetailView
   (availability list + coach override write + record-erg quick action); RaceDayDetailView (races list + day
@@ -69,11 +79,16 @@ BUILD MECHANICS (learned): XcodeGen (apple/project.yml → run `xcodegen generat
 UI verify = boot iPhone 17 Pro sim + `xcrun simctl io ... screenshot`. Real Liquid Glass API:
 `.glassEffect(.regular, in: .rect(cornerRadius:))` + `GlassEffectContainer(spacing:content:)` (iOS/macOS 26).
 
-REMAINING (in order): **Plan 4e** (Crews/Squad) → 4f Lineup editor (the hero) → 4g coach-app integration.
-CARRY-FORWARD into 4e: add heat drummer/sweep persistence (no repo writes `heats` yet); wrap MainShell tabs in
-NavigationStack (child `.navigationTitle`s no-op until then). Into 4g: sync-completion refresh for the feature
-screens (they load once via `.task`); ScheduleViewModel.load() re-entrancy guard; availability note editing;
-erg recordedBy→current coach. Plus the 4c deferred-polish (.dsMono token, teal placeholder, etc.).
+REMAINING (in order): **Plan 4f** (Lineup editor — the hero) → 4g coach-app integration.
+CARRY-FORWARD into 4f: add heat drummer/sweep persistence (LineupRepository writes `seats` but nothing writes
+`heats`); boat-size-specific gender-rule check (per-heat, using the race's boat size); the hull grid + seat drag
++ Balance HUD + Suggest/Auto-fill (PaddltirCore.Greedy) + Optimise (server MIP). Into 4g: sync-completion refresh
+for the feature screens (they load once via `.task` — the Squad list even needed a 2-launch screenshot);
+ScheduleViewModel.load() re-entrancy guard; availability note editing; erg recordedBy→current coach; a
+CrewDetailModel gender-rule unit test; guard SquadView add-sheet on non-empty clubId; surface side/gender/role
+squad filter chips; the 4c deferred-polish (.dsMono token, teal placeholder). Feature-view detail screens (paddler/
+crew/training/race) each own their NavigationStack, so the child-`.navigationTitle` issue is now only the bare
+Schedule/Crews/Squad placeholders' successors — all replaced except none remain.
 Deferred to Plan 6: ISO8601 ms-truncation causes newest row to re-pull each sync (idempotent); splitRows
 returns [] on non-array response; live PUSH never exercised (live PULL + onboarding RPCs now are).
 Then Plan 5 (paddler PWA), GO-LIVE (hosted Supabase project ap-southeast-2 + Vercel deploy), Plan 6
