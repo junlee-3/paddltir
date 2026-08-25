@@ -28,4 +28,14 @@ describe("toRaceViews", () => {
     const [race] = toRaceViews(rows, new Map());
     expect(race.heats[0].seats[0].paddler).toEqual({ id: "lily", name: "Unknown" });
   });
+  it("still shows the drummer name when the drummer is also a seated paddler", () => {
+    const bothRows: RaceRow[] = [{
+      ...rows[0],
+      heats: [{ id: "h1", name: "Heat 1", sort_order: 1, drummer_id: "lily", sweep_id: "sam",
+        seats: [{ bench: 1, side: "left", paddler_id: "lily" }], heat_reserves: [] }],
+    }];
+    const [race] = toRaceViews(bothRows, names);
+    expect(race.heats[0].drummer).toEqual({ id: "lily", name: "Lily" });
+    expect(race.heats[0].seats[0].paddler).toEqual({ id: "lily", name: "Lily" });
+  });
 });

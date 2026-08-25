@@ -6,6 +6,13 @@ import { SegmentedControl } from "./ui";
 
 const OPTIONS = [{ value: "in", label: "In" }, { value: "maybe", label: "Maybe" }, { value: "out", label: "Out" }] as const;
 
+/**
+ * `useState(value)` only seeds the initial render — a later server value (e.g. a coach-side
+ * change re-rendered by `router.refresh()`) is silently ignored unless the caller remounts
+ * this component. Callers MUST pass `key={`${sessionId}:${value ?? "none"}`}` so a changed
+ * server value forces a fresh mount (optimistic updates still work fine between refreshes,
+ * since they only touch this instance's own state).
+ */
 export function AvailabilityToggle({ sessionId, value, label }: { sessionId: string; value: AvailabilityStatus | null; label: string }) {
   const [current, setCurrent] = useState(value);
   const [error, setError] = useState<string | null>(null);

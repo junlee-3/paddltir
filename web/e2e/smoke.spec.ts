@@ -36,6 +36,7 @@ test("a paddler signs in, sees their next event, finds their seat, logs an erg",
   await page.reload();
   await expect(group.getByRole("radio", { name: "Maybe" })).toHaveAttribute("aria-checked", "true");
   await group.getByRole("radio", { name: "In" }).click();
+  await expect(group.getByRole("radio", { name: "In" })).toHaveAttribute("aria-checked", "true");
 
   // The race day: Lily is Bench 1 left in Heat 1; the Final is empty.
   await page.getByRole("link", { name: /Sydney Regatta/ }).click();
@@ -47,7 +48,7 @@ test("a paddler signs in, sees their next event, finds their seat, logs an erg",
   await expect(page.getByText("Not in this heat")).toBeVisible();
 
   // Erg
-  await page.getByRole("link", { name: "Erg" }).click();
+  await page.getByRole("link", { name: "Erg", exact: true }).click();
   await page.getByLabel("Metres (1 min)").fill("555");
   await page.getByRole("button", { name: "Log erg test" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved 555 m.");
@@ -57,7 +58,7 @@ test("a paddler signs in, sees their next event, finds their seat, logs an erg",
   await expect(page.locator("li").filter({ hasText: "555 m" }).getByText("555 m", { exact: true })).toBeVisible();
 
   // Profile + manifest
-  await page.getByRole("link", { name: "Profile" }).click();
+  await page.getByRole("link", { name: "Profile", exact: true }).click();
   await expect(page.getByText("Signed in as lily@paddltir.dev")).toBeVisible();
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", /manifest\.webmanifest/);
 });

@@ -15,7 +15,7 @@ export function EventView({ event, me, nowISO }: { event: Event; me: string; now
       {event.kind === "training" ? (
         <Card className="p-4">
           <MicroLabel>Are you in?</MicroLabel>
-          <div className="mt-3"><AvailabilityToggle sessionId={event.id} value={event.myAvailability} label={`Availability for ${event.title}`} /></div>
+          <div className="mt-3"><AvailabilityToggle key={`${event.id}:${event.myAvailability ?? "none"}`} sessionId={event.id} value={event.myAvailability} label={`Availability for ${event.title}`} /></div>
           {event.myNote && <p className="mt-2 text-sm text-ink2">Note: {event.myNote}</p>}
         </Card>
       ) : event.races.length === 0 ? (

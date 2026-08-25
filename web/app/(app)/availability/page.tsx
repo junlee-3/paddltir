@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/data/viewer";
 import { fetchUpcomingSessions } from "@/lib/data/sessions";
-import { formatSessionDate, formatSessionTime } from "@/lib/time";
+import { formatSessionDate, formatSessionTime, startOfTodayISO } from "@/lib/time";
 import { AvailabilityToggle } from "@/components/AvailabilityToggle";
 import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 import { Card, MicroLabel, Pill } from "@/components/ui";
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Availability" };
 export default async function AvailabilityPage() {
   const viewer = await getViewer();
   const supabase = await createClient();
-  const sessions = await fetchUpcomingSessions(supabase, new Date().toISOString(), 20);
+  const sessions = await fetchUpcomingSessions(supabase, startOfTodayISO(new Date().toISOString()), 20);
   const { data: mine, error: mineError } = await supabase.from("availability").select("session_id, status").eq("paddler_id", viewer.paddler!.id);
   assertNoQueryError("availability", mineError);
   const status = new Map<string, AvailabilityStatus>((mine ?? []).map((a) => [a.session_id, a.status]));
@@ -29,7 +29,7 @@ export default async function AvailabilityPage() {
             <div><MicroLabel>{formatSessionDate(s.startsAt)} · {formatSessionTime(s.startsAt)}</MicroLabel><h2 className="mt-1 font-bold">{s.title}</h2></div>
             <Pill tone={s.kind === "race_day" ? "accent" : "neutral"}>{s.kind === "race_day" ? "Race day" : "Training"}</Pill>
           </div>
-          <div className="mt-3"><AvailabilityToggle sessionId={s.id} value={status.get(s.id) ?? null} label={`Availability for ${s.title}`} /></div>
+          <div className="mt-3"><AvailabilityToggle key={`${s.id}:${status.get(s.id) ?? "none"}`} sessionId={s.id} value={status.get(s.id) ?? null} label={`Availability for ${s.title}`} /></div>
         </Card>
       ))}
     </main>

@@ -6,8 +6,11 @@ import { fetchEvent } from "@/lib/data/sessions";
 import { EventView } from "@/components/EventView";
 import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!UUID_RE.test(id)) notFound();
   const viewer = await getViewer();
   const supabase = await createClient();
   const event = await fetchEvent(supabase, id, viewer.paddler!.id);

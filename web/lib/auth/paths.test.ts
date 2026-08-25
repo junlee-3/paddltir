@@ -21,4 +21,13 @@ describe("safeNext", () => {
     expect(safeNext("")).toBe("/");
     expect(safeNext(null)).toBe("/");
   });
+  it("rejects backslash open-redirect tricks (WHATWG URL treats \\ as /)", () => {
+    expect(safeNext("/\\evil.com")).toBe("/");
+    expect(safeNext("/\\/evil.com")).toBe("/");
+    expect(safeNext("/%5Cevil.com")).toBe("/");
+    expect(safeNext("/%5cevil.com")).toBe("/");
+  });
+  it("drops a hash fragment from an otherwise-safe path", () => {
+    expect(safeNext("/erg#frag")).toBe("/erg");
+  });
 });

@@ -26,7 +26,7 @@ export function InstallNudge() {
   const dismiss = () => { try { localStorage.setItem(KEY, "1"); } catch { /* ignore */ } setKind("none"); };
   if (kind === "none") return null;
   return (
-    <aside role="dialog" aria-label="Install Paddltir" className="fixed inset-x-4 bottom-20 z-10 mx-auto max-w-md rounded-card border border-border bg-surface p-4 shadow-lg">
+    <aside role="dialog" aria-label="Install Paddltir" className="fixed inset-x-4 bottom-20 z-10 mx-auto max-w-md rounded-card border border-border bg-surface p-4">
       <p className="font-bold">Add Paddltir to your Home Screen</p>
       {kind === "ios"
         ? <p className="mt-1 text-sm text-ink2">Tap <span className="font-semibold">Share</span>, then <span className="font-semibold">Add to Home Screen</span>.</p>

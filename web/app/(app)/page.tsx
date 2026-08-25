@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/data/viewer";
 import { fetchEvent, fetchUpcomingSessions } from "@/lib/data/sessions";
-import { formatSessionDate, formatSessionTime } from "@/lib/time";
+import { formatSessionDate, formatSessionTime, startOfTodayISO } from "@/lib/time";
 import { EventView } from "@/components/EventView";
 import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 import { Card, MicroLabel, Pill } from "@/components/ui";
@@ -11,7 +11,7 @@ export default async function NextEventPage() {
   const viewer = await getViewer();
   const supabase = await createClient();
   const nowISO = new Date().toISOString();
-  const upcoming = await fetchUpcomingSessions(supabase, nowISO);
+  const upcoming = await fetchUpcomingSessions(supabase, startOfTodayISO(nowISO));
   const next = upcoming[0] ? await fetchEvent(supabase, upcoming[0].id, viewer.paddler!.id) : null;
   return (
     <main className="flex flex-col gap-6">

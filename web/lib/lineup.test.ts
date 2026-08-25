@@ -20,6 +20,13 @@ describe("whereAmI", () => {
     expect(whereAmI(heat, "hannah")).toEqual({ kind: "reserve" });
     expect(whereAmI(heat, "nobody")).toEqual({ kind: "none" });
   });
+  it("a paddler who is both drummer and seated resolves to their seat (seat wins)", () => {
+    const both: HeatView = {
+      ...heat,
+      drummer: { id: "lily", name: "Lily" }, // same person as the bench-1-left seat above
+    };
+    expect(whereAmI(both, "lily")).toEqual({ kind: "seat", bench: 1, side: "left" });
+  });
 });
 
 describe("benchRows", () => {

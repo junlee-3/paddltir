@@ -38,11 +38,16 @@ export async function submitErg(_prev: ErgState, formData: FormData): Promise<Er
   return { status: "saved", metres: parsed.metres };
 }
 
-export async function updateDisplayName(formData: FormData): Promise<void> {
+export type NameState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
+
+export async function updateDisplayName(_prev: NameState, formData: FormData): Promise<NameState> {
   const name = String(formData.get("display_name") ?? "").trim().slice(0, 80);
+  if (name.length === 0) return { status: "error", message: "Enter a display name." };
   const viewer = await getViewer();
-  if (!viewer.user || name.length === 0) return;
+  if (!viewer.user) return { status: "error", message: "Couldn't save — try again." };
   const supabase = await createClient();
-  await supabase.from("profiles").update({ display_name: name }).eq("id", viewer.user.id);
+  const { error } = await supabase.from("profiles").update({ display_name: name }).eq("id", viewer.user.id);
+  if (error) return { status: "error", message: "Couldn't save — try again." };
   revalidatePath("/profile");
+  return { status: "saved" };
 }

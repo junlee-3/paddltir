@@ -14,7 +14,7 @@ export function ErgForm({ today }: { today: string }) {
           <input name="tested_at" type="date" max={today} defaultValue={today} required className="min-h-touch rounded-ctl border border-border bg-surface px-3 focus:border-accent focus:outline-none" /></label>
       </div>
       {state.status === "error" && <p role="alert" className="text-sm text-danger">{state.message}</p>}
-      {state.status === "saved" && <p role="status" className="text-sm text-good">Saved {state.metres} m.</p>}
+      {state.status === "saved" && <p role="status" className="text-sm font-semibold text-ink">Saved {state.metres} m.</p>}
       <PrimaryButton type="submit" disabled={pending}>{pending ? "Saving…" : "Log erg test"}</PrimaryButton>
     </form>
   );

@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
       <header>
-        <p className="text-3xl font-extrabold tracking-[-0.02em]">Paddltir</p>
+        <h1 className="text-3xl font-extrabold tracking-[-0.02em]">Paddltir</h1>
         <p className="mt-1 text-ink2">Your crew, your seat, your next race.</p>
       </header>
       <Card className="p-5">

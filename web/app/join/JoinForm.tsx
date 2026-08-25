@@ -32,7 +32,7 @@ export function JoinForm() {
       <label className="flex flex-col gap-1">
         <MicroLabel>Invite code</MicroLabel>
         <input name="code" required autoCapitalize="characters" autoComplete="off" placeholder="DEMO2026"
-          className="min-h-touch rounded-ctl border border-border bg-surface px-3 font-mono text-lg tracking-widest uppercase placeholder:text-ink3 focus:border-accent focus:outline-none" />
+          className="min-h-touch rounded-ctl border border-border bg-surface px-3 text-lg tracking-widest uppercase placeholder:text-ink3 focus:border-accent focus:outline-none" />
       </label>
       {state.status === "error" && <p role="alert" className="text-sm text-danger">{state.message}</p>}
       <PrimaryButton type="submit" disabled={pending}>{pending ? "Looking up…" : "Continue"}</PrimaryButton>
