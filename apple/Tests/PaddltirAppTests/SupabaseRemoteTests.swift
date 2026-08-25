@@ -5,7 +5,14 @@
 // supabase-swift wire format end-to-end, which nothing else in this repo
 // does.
 //
-// Requires, from the repo root:
+// Runs only when `PADDLTIR_LIVE_SUPABASE=1` is set in the environment —
+// gated via `@Test(.enabled(if:))` below, rather than left to fail on any
+// machine/CI run without the local stack up. The default
+// `xcodebuild ... test` invocation leaves this unset, so this test is
+// SKIPPED (not run, not failed) by default; the rest of the suite stays
+// green everywhere.
+//
+// To run it for real, from the repo root:
 //   1. `supabase start` (needs Docker/OrbStack) — `supabase status` prints
 //      the API URL + anon key, already filled into the git-ignored
 //      `apple/Sources/App/Secrets.swift` for local dev.
@@ -16,14 +23,18 @@
 //      `docker exec -i supabase_db_paddltir psql -U postgres -d postgres
 //      < supabase/seed_dev.sql`) to load the demo coach account and the
 //      bulk of the paddler/crew/heat rows this test asserts on.
+//   3. `TEST_RUNNER_PADDLTIR_LIVE_SUPABASE=1 xcodebuild -scheme Paddltir
+//      -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+//      -derivedDataPath DerivedData test`
+//      Note the `TEST_RUNNER_` prefix: `xcodebuild test` runs the test host
+//      in the Simulator, which does not inherit the invoking shell's plain
+//      environment — only variables prefixed `TEST_RUNNER_` are forwarded
+//      into that process (Xcode strips the prefix before the test sees it).
+//      Confirmed directly: a plain `PADDLTIR_LIVE_SUPABASE=1 xcodebuild
+//      ... test` still reports this test as skipped.
 //
 // Ran successfully against the local stack while implementing this test
-// (24 paddlers, 1 crew, 3 heats seeded) — see task-6-report.md. If the local
-// stack isn't up when this suite runs, this test fails with a connection
-// error rather than being silently skipped — that's an accepted tradeoff per
-// Task 6's brief (mark `@Test(.disabled("requires local Supabase stack"))`
-// instead if the stack won't come up at all; see the report for whether
-// that applies here).
+// (24 paddlers, 1 crew, 3 heats seeded) — see task-6-report.md.
 //
 // `InMemoryAuthLocalStorage` below works around a real gotcha discovered
 // while writing this test: supabase-swift's default `AuthLocalStorage` is
@@ -68,7 +79,8 @@ private final class InMemoryAuthLocalStorage: AuthLocalStorage, @unchecked Senda
 }
 
 @Suite struct SupabaseRemoteTests {
-    @Test func syncAllPullsTheLocalStackDemoSeedIntoGRDB() async throws {
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["PADDLTIR_LIVE_SUPABASE"] == "1"))
+    func syncAllPullsTheLocalStackDemoSeedIntoGRDB() async throws {
         let client = SupabaseClient(
             supabaseURL: URL(string: Secrets.supabaseURL)!,
             supabaseKey: Secrets.supabaseAnonKey,
