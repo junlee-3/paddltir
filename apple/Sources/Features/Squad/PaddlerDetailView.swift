@@ -62,7 +62,7 @@ struct PaddlerDetailView: View {
             if let pw = model.paddler {
                 content(model, pw)
             } else if model.isLoaded {
-                ScreenScaffold("Not found", note: "This record is no longer available.")
+                notFoundState(model)
             } else {
                 ProgressView()
             }
@@ -73,6 +73,17 @@ struct PaddlerDetailView: View {
             #endif
             .background(DS.bg)
             .task { await model.observe() }
+    }
+
+    /// F2 (follow-up): a genuine "not found" (no `paddler` row, no error) still gets
+    /// the plain empty state; a failed first read (`lastError != nil`) surfaces its
+    /// banner above it, so a real failure is never presented as "this record doesn't
+    /// exist".
+    @ViewBuilder private func notFoundState(_ model: PaddlerDetailModel) -> some View {
+        VStack(spacing: DS.Space.m) {
+            if let e = model.lastError { StatusBanner(e).padding(.horizontal, DS.Space.l) }
+            ScreenScaffold("Not found", note: "This record is no longer available.")
+        }
     }
 
     @ViewBuilder private func content(_ model: PaddlerDetailModel, _ pw: PaddlerWithErg) -> some View {

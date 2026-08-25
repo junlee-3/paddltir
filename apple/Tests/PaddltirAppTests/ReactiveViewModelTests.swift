@@ -48,4 +48,20 @@ import Testing
         #expect(vm.isLoaded)
         #expect(vm.lastError != nil)
     }
+
+    /// F2 follow-up: same pattern as the squad-list screen, but for a single-record
+    /// detail model — `crew` must stay nil (never a false "found"), while `isLoaded`
+    /// and `lastError` still flip so `CrewDetailView` can distinguish this from the
+    /// genuine "no such crew" empty state (see `notFoundState` in CrewDetailView.swift).
+    @Test func crewDetailModelSurfacesAFailedFirstEmission() async throws {
+        let db = try AppDatabase.inMemory()
+        try db.dbQueue.close()
+        let vm = CrewDetailModel(crewId: "c-1", db: db)
+        let task = Task { await vm.observe() }
+        defer { task.cancel() }
+        for _ in 0..<50 where !(vm.isLoaded && vm.lastError != nil) { try await Task.sleep(for: .milliseconds(40)) }
+        #expect(vm.isLoaded)
+        #expect(vm.lastError != nil)
+        #expect(vm.crew == nil)
+    }
 }

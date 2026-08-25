@@ -252,12 +252,16 @@ final class LineupViewModel {
     /// Drummer/sweep can't also hold a bench seat; assigning removes them from the hull.
     /// H12: same id validation as `dragDrop`/`dropOnTray` — `nil` (clearing the role) is
     /// always allowed, a non-nil id must resolve in the roster.
+    /// F6: assigning a paddler who currently occupies a LOCKED seat is a no-op too — the
+    /// same "unlock first" rule as every other manual move (`dragDrop`/`tapSeat`/`dropOnTray`).
     func setDrummer(_ id: PaddlerID?) {
         guard id == nil || roster?.byID[id!] != nil else { return }
+        if let id, let seat = lineup?.seat(of: id), lineup?.isLocked(seat) == true { return }
         mutate { l in if let id { l.remove(id); if l.sweepId == id { l.sweepId = nil } }; l.drummerId = id }
     }
     func setSweep(_ id: PaddlerID?) {
         guard id == nil || roster?.byID[id!] != nil else { return }
+        if let id, let seat = lineup?.seat(of: id), lineup?.isLocked(seat) == true { return }
         mutate { l in if let id { l.remove(id); if l.drummerId == id { l.drummerId = nil } }; l.sweepId = id }
     }
 

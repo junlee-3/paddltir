@@ -40,6 +40,7 @@ import Testing
     @Test func lockTogglesAndDrummerLeavesTheSeats() {
         let m = vm(); m.dragDrop(PaddlerID("p1"), onto: a)
         m.toggleLock(a); #expect(m.lineup?.isLocked(a) == true)
+        m.toggleLock(a)   // unlock — F6: a locked occupant can't become drummer either (below)
         m.setDrummer(PaddlerID("p1"))
         #expect(m.lineup?.drummerId == PaddlerID("p1")); #expect(m.lineup?.paddler(at: a) == nil)
         #expect(m.reserves.contains(PaddlerID("p1")) == false)   // drummer isn't a reserve
@@ -120,6 +121,18 @@ import Testing
         m.dragDrop(PaddlerID("p2"), onto: a)
         #expect(m.lineup?.paddler(at: a) == PaddlerID("p2"))
         #expect(m.canUndo == true)
+    }
+
+    /// F6 follow-up: `setDrummer`/`setSweep` are manual moves too — a locked occupant
+    /// resists them exactly like every other choke point (unlock first).
+    @Test func setDrummerOfLockedOccupantIsANoOp() {
+        let m = vm(); m.dragDrop(PaddlerID("p1"), onto: a)
+        m.toggleLock(a)
+        let before = m.lineup
+        let canUndoBefore = m.canUndo
+        m.setDrummer(PaddlerID("p1"))
+        #expect(m.lineup == before)
+        #expect(m.canUndo == canUndoBefore)
     }
 
     // MARK: - F3: the editor surfaces every error
