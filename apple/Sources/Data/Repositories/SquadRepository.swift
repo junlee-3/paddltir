@@ -91,4 +91,14 @@ struct SquadRepository: Sendable {
         }
         return row
     }
+
+    /// Every erg test for a paddler, oldest-first — the erg-history sparkline.
+    func ergHistory(paddlerId: String) async throws -> [ErgTest] {
+        try db.read { db in
+            try ErgTest
+                .filter(Column("paddler_id") == paddlerId)
+                .order(Column("tested_at"))
+                .fetchAll(db)
+        }
+    }
 }
