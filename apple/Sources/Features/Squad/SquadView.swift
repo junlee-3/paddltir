@@ -34,6 +34,9 @@ struct SquadView: View {
             if model == nil { model = SquadViewModel(db: app.environment.db) }
             await model?.load()
         }
+        .onChange(of: app.environment.syncGeneration) {
+            Task { await model?.load() }
+        }
     }
 
     @ViewBuilder private func content(_ model: SquadViewModel) -> some View {
