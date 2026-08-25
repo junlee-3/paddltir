@@ -20,6 +20,10 @@ final class LineupViewModel {
     private(set) var canRedo = false
     private(set) var isSaving = false
     private(set) var isLoaded = false
+    private(set) var lastError: String?
+
+    private(set) var heats: [Heat] = []
+    var selectedHeatIndex = 0 { didSet { if let h = heats[safe: selectedHeatIndex], h.id != heat?.id { Task { await load(heatId: h.id) } } } }
 
     private let db: AppDatabase
     private let repo: LineupRepository
@@ -50,6 +54,33 @@ final class LineupViewModel {
         if ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_AUTOFILL"] == "1" { autoFill() }
         #endif
         isLoaded = true
+    }
+
+    /// Long-lived: mirrors the race's heats; creates "Heat 1" for a race with none.
+    /// Auto-creates at most once per call — a stale/duplicate empty emission from the
+    /// same observation can never create a second heat.
+    func observeHeats(raceId: String) async {
+        var didAutoCreate = false
+        do {
+            for try await list in repo.observeHeats(raceId: raceId).values(in: db.dbQueue) {
+                if list.isEmpty {
+                    guard !didAutoCreate else { continue }
+                    didAutoCreate = true
+                    _ = try await repo.createHeat(raceId: raceId, name: "Heat 1")
+                    continue
+                }
+                heats = list
+                if heat == nil, let first = list.first { await load(heatId: first.id) }
+            }
+        } catch { lastError = error.localizedDescription }
+    }
+
+    func addHeat(raceId: String) async {
+        do {
+            let h = try await repo.createHeat(raceId: raceId, name: "Heat \(heats.count + 1)")
+            selectedHeatIndex = heats.count
+            await load(heatId: h.id)
+        } catch { lastError = error.localizedDescription }
     }
 
     /// Candidates not seated / drummer / sweep, strongest erg first.
@@ -108,7 +139,12 @@ final class LineupViewModel {
     /// Drag-and-drop: a reserve or a seated paddler dropped onto a seat.
     /// Seated → occupied = swap; seated → empty = move; reserve → any = place
     /// (an evicted occupant returns to the reserves). All via Lineup.
+    ///
+    /// H12: drops accept any `String` payload, so a drag from outside the app could
+    /// carry an id that isn't in the roster — validated here, the VM's single choke
+    /// point, so an unknown id is a no-op (no mutate, no undo entry, no save).
     func dragDrop(_ id: PaddlerID, onto seat: Seat) {
+        guard roster?.byID[id] != nil else { return }
         guard let current = lineup else { return }
         if let from = current.seat(of: id) {
             guard from != seat else { return }
@@ -120,6 +156,7 @@ final class LineupViewModel {
     }
 
     func dropOnTray(_ id: PaddlerID) {
+        guard roster?.byID[id] != nil else { return }
         guard lineup?.seat(of: id) != nil else { return }
         mutate { $0.remove(id) }; selection = nil
     }
@@ -130,10 +167,14 @@ final class LineupViewModel {
     }
 
     /// Drummer/sweep can't also hold a bench seat; assigning removes them from the hull.
+    /// H12: same id validation as `dragDrop`/`dropOnTray` — `nil` (clearing the role) is
+    /// always allowed, a non-nil id must resolve in the roster.
     func setDrummer(_ id: PaddlerID?) {
+        guard id == nil || roster?.byID[id!] != nil else { return }
         mutate { l in if let id { l.remove(id); if l.sweepId == id { l.sweepId = nil } }; l.drummerId = id }
     }
     func setSweep(_ id: PaddlerID?) {
+        guard id == nil || roster?.byID[id!] != nil else { return }
         mutate { l in if let id { l.remove(id); if l.drummerId == id { l.drummerId = nil } }; l.sweepId = id }
     }
 

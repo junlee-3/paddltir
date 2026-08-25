@@ -41,6 +41,16 @@ import Testing
         #expect(m.lineup?.drummerId == PaddlerID("p1")); #expect(m.lineup?.paddler(at: a) == nil)
         #expect(m.reserves.contains(PaddlerID("p1")) == false)   // drummer isn't a reserve
     }
+    /// H12: a drop payload that doesn't resolve in the roster (e.g. text dragged in
+    /// from another app) is a no-op — no mutate, no undo entry, no save.
+    @Test func dragUnknownIDOntoEmptySeatIsANoOp() {
+        let m = vm()
+        let before = m.lineup
+        m.dragDrop(PaddlerID("nope"), onto: a)
+        #expect(m.lineup == before)
+        #expect(m.canUndo == false)
+    }
+
     @Test func undoThenRedoRoundTrips() {
         let m = vm(); m.dragDrop(PaddlerID("p1"), onto: a)
         m.undo(); #expect(m.lineup?.paddler(at: a) == nil); #expect(m.canRedo)

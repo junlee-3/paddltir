@@ -1,23 +1,37 @@
 // apple/Sources/Features/Lineup/LineupEditorView.swift
-// The hero screen. Glass heat-switcher header, the solid HullGrid (drag & drop,
-// long-press context menu, spring motion + haptics on every change), a glass
-// Balance HUD (beam + telemetry + gender badge) driven by PaddltirCore on every
-// change, a drop-target reserves strip, and a glass toolbar (Suggest / Auto-fill /
-// Undo / Redo). Optimise (server MIP) is out of scope until the solver is deployed (go-live).
+// The hero screen. Glass heat-switcher header (multi-heat, with "+" to add
+// another), the solid HullGrid (drag & drop, long-press context menu, spring
+// motion + haptics on every change, section-banded bench rows), a glass
+// Balance HUD (beam + telemetry + gender badge) driven by PaddltirCore on
+// every change, a drop-target reserves strip (always present — it's the
+// drop target for drag-to-unseat), and a glass toolbar (Suggest / Auto-fill /
+// Undo / Redo). iPad/Mac get a centred hull + right-hand inspector column;
+// iPhone keeps the vertical stack, sharing the same hull/HUD/tray views.
+// Optimise (server MIP) is out of scope until the solver is deployed (go-live).
 import SwiftUI
 import PaddltirCore
 
 struct LineupEditorView: View {
-    let heatId: String
-    let raceName: String
+    let race: Race
     @State private var model: LineupViewModel
-    @State private var heatSelection = 0
     @State private var showSuggestions = false
 
-    init(heatId: String, raceName: String, db: AppDatabase) {
-        self.heatId = heatId
-        self.raceName = raceName
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+
+    init(race: Race, db: AppDatabase) {
+        self.race = race
         _model = State(initialValue: LineupViewModel(db: db))
+    }
+
+    /// iPad/Mac get the centred-hull + right-inspector layout; iPhone keeps the vertical stack.
+    private var isWide: Bool {
+        #if os(macOS)
+        true
+        #else
+        sizeClass == .regular
+        #endif
     }
 
     var body: some View {
@@ -26,46 +40,44 @@ struct LineupEditorView: View {
                 content(model, lineup: lineup, roster: roster, boat: boat)
             } else if model.isLoaded {
                 ScreenScaffold("Lineup", note: "Couldn't load this race's crew. It may not have synced yet — go back and try again, or check the crew still exists.") {
-                    SecondaryButton("Try again") { Task { await model.load(heatId: heatId) } }
+                    SecondaryButton("Try again") {
+                        if let h = model.heats[safe: model.selectedHeatIndex] {
+                            Task { await model.load(heatId: h.id) }
+                        }
+                    }
                 }
             } else {
                 ProgressView()
             }
         }
-        .navigationTitle(raceName)
+        .navigationTitle(race.name)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .background(DS.bg)
-        .task { await model.load(heatId: heatId) }
+        .task { await model.observeHeats(raceId: race.id) }
     }
 
     @ViewBuilder private func content(_ model: LineupViewModel, lineup: Lineup, roster: Roster, boat: Boat) -> some View {
+        @Bindable var model = model
         ScrollView {
-            VStack(spacing: DS.Space.m) {
-                HeatSwitcher(names: [model.heat?.name ?? "Heat"], selection: $heatSelection)   // single heat for now; multi-heat nav is a later pass
-
-                HullGrid(lineup: lineup, roster: roster, selection: model.selection, actions: hullActions(model))
-                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.lineup)
-                    .sensoryFeedback(.impact(weight: .light), trigger: model.lineup)
-
-                if let metrics = model.metrics {
-                    GlassBar {
-                        VStack(alignment: .leading, spacing: DS.Space.s) {
-                            BalanceBeam(imbalance: model.beamImbalance, label: "Trim").frame(height: 20)
-                            TelemetryGrid(metrics: metrics, boat: boat)
-                            HStack {
-                                MicroLabel("GENDER")
-                                Spacer()
-                                Text("W \(metrics.women) · M \(metrics.men)").font(.dsCaption.weight(.bold)).foregroundStyle(DS.ink)
-                            }
-                        }
-                        .padding(DS.Space.m)
+            Group {
+                if isWide {
+                    HStack(alignment: .top, spacing: DS.Space.l) {
+                        hullColumn(model, heatSelection: $model.selectedHeatIndex, lineup: lineup, roster: roster)
+                            .frame(maxWidth: 560)
+                        inspector(model, roster: roster, boat: boat)
+                            .frame(width: 360)
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    VStack(spacing: DS.Space.m) {
+                        hullColumn(model, heatSelection: $model.selectedHeatIndex, lineup: lineup, roster: roster)
+                        if let metrics = model.metrics { hud(model, metrics: metrics, boat: boat) }
+                        reserves(model, roster: roster)
+                        toolbar(model)
                     }
                 }
-
-                reserves(model, roster: roster)
-                toolbar(model)
             }
             .padding(DS.Space.l)
         }
@@ -74,10 +86,55 @@ struct LineupEditorView: View {
         }
     }
 
-    @ViewBuilder private func reserves(_ model: LineupViewModel, roster: Roster) -> some View {
-        if !model.reserves.isEmpty {
+    /// The heat switcher above the hull, shared verbatim between the wide and narrow
+    /// layouts so there is exactly one place that lays out the hull.
+    @ViewBuilder private func hullColumn(_ model: LineupViewModel, heatSelection: Binding<Int>, lineup: Lineup, roster: Roster) -> some View {
+        VStack(spacing: DS.Space.m) {
+            HeatSwitcher(names: model.heats.map(\.name), selection: heatSelection,
+                         onAdd: { Task { await model.addHeat(raceId: race.id) } })
+            HullGrid(lineup: lineup, roster: roster, selection: model.selection, actions: hullActions(model))
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.lineup)
+                .sensoryFeedback(.impact(weight: .light), trigger: model.lineup)
+        }
+    }
+
+    /// Wide layout only: the Balance HUD + reserves + toolbar in a fixed-width column
+    /// beside the centred hull.
+    @ViewBuilder private func inspector(_ model: LineupViewModel, roster: Roster, boat: Boat) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.m) {
+            if let metrics = model.metrics { hud(model, metrics: metrics, boat: boat) }
+            reserves(model, roster: roster)
+            toolbar(model)
+        }
+    }
+
+    @ViewBuilder private func hud(_ model: LineupViewModel, metrics: Metrics, boat: Boat) -> some View {
+        GlassBar {
             VStack(alignment: .leading, spacing: DS.Space.s) {
-                MicroLabel("RESERVES")
+                BalanceBeam(imbalance: model.beamImbalance, label: "Trim").frame(height: 20)
+                TelemetryGrid(metrics: metrics, boat: boat)
+                HStack {
+                    MicroLabel("GENDER")
+                    Spacer()
+                    GenderBadge(metrics: metrics)
+                }
+            }
+            .padding(DS.Space.m)
+        }
+    }
+
+    /// H12: rendered unconditionally — it's the drop target for drag-to-unseat, needed
+    /// most when the boat is full — with an empty-state sentence in the same container
+    /// so the drop target keeps its size.
+    @ViewBuilder private func reserves(_ model: LineupViewModel, roster: Roster) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s) {
+            MicroLabel("RESERVES")
+            if model.reserves.isEmpty {
+                Text("No reserves — drag a paddler here to unseat")
+                    .font(.dsFootnote)
+                    .foregroundStyle(DS.ink3)
+                    .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+            } else {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 96))], spacing: DS.Space.s) {
                     ForEach(model.reserves, id: \.self) { id in
                         let p = roster.byID[id]
@@ -93,12 +150,12 @@ struct LineupEditorView: View {
                     }
                 }
             }
-            .dropDestination(for: String.self) { items, _ in
-                guard let raw = items.first else { return false }
-                model.dropOnTray(PaddlerID(raw))
-                Task { await model.save() }
-                return true
-            }
+        }
+        .dropDestination(for: String.self) { items, _ in
+            guard let raw = items.first else { return false }
+            model.dropOnTray(PaddlerID(raw))
+            Task { await model.save() }
+            return true
         }
     }
 

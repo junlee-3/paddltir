@@ -27,6 +27,8 @@ struct HullGrid: View {
                     .frame(width: 56)
                     seatCell(Seat(bench: bench, side: .right))
                 }
+                .padding(.vertical, DS.Space.xs)
+                .background(sectionFill(bench), in: .rect(cornerRadius: DS.R.sm))
             }
             capRow("Sweep", id: lineup.sweepId)
         }
@@ -38,6 +40,16 @@ struct HullGrid: View {
     private func section(_ bench: Int) -> String {
         switch lineup.boat.section(ofBench: bench) {
         case .stroke: "STROKE"; case .pace: "PACE"; case .engine: "ENGINE"; case .sprint: "SPRINT"
+        }
+    }
+
+    /// Section bands: a subtle background per bench row so stroke/sprint read as
+    /// distinct from pace/engine at a glance. Hairline borders on the hull card and
+    /// seat tiles remain the primary depth cue — no shadows, no glass here.
+    private func sectionFill(_ bench: Int) -> Color {
+        switch lineup.boat.section(ofBench: bench) {
+        case .stroke, .sprint: DS.surface2
+        case .pace, .engine: DS.surface
         }
     }
 

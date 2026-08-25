@@ -1,7 +1,8 @@
 // apple/Sources/Features/Schedule/RaceDayDetailView.swift
 // Race-day detail: the day's headcount summary, the list of races (crew ·
-// boat size · distance), and `+ Race`. Tapping a race navigates toward the
-// lineup editor (a placeholder until Plan 4f builds it).
+// boat size · distance), and `+ Race`. Tapping a race pushes the lineup
+// editor for it, which resolves/auto-creates the race's heats itself
+// (`LineupViewModel.observeHeats(raceId:)`).
 import SwiftUI
 
 @MainActor @Observable
@@ -72,7 +73,7 @@ struct RaceDayDetailView: View {
                 await model.addRace(crewId: crewId, name: name, boatSize: size, distanceM: dist)
             }
         }
-        .navigationDestination(for: Race.self) { race in RaceHeatLoader(race: race, db: db) }
+        .navigationDestination(for: Race.self) { race in LineupEditorView(race: race, db: db) }
         .task { await model.observe() }
     }
 
@@ -149,42 +150,6 @@ struct RaceFormView: View {
                     .disabled(crewId.isEmpty || name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-        }
-    }
-}
-
-/// Resolves a `Race` to its first heat — creating one ("Heat 1") if the race
-/// has none yet — then shows the lineup editor for it. A race may have 0+
-/// heats; this is the simplest correct wiring until multi-heat navigation
-/// (switching among a race's existing heats) lands in a later pass.
-struct RaceHeatLoader: View {
-    let race: Race
-    let db: AppDatabase
-    @State private var heatId: String?
-    @State private var isResolved = false
-    @State private var failed = false
-
-    var body: some View {
-        Group {
-            if let heatId {
-                LineupEditorView(heatId: heatId, raceName: race.name, db: db)
-            } else if failed {
-                ScreenScaffold("Lineup", note: "Couldn't open the lineup.")
-            } else {
-                ProgressView()
-            }
-        }
-        .task {
-            guard !isResolved else { return }
-            let repo = LineupRepository(db: db)
-            if let first = (try? await repo.heats(raceId: race.id))?.first {
-                heatId = first.id
-            } else if let created = try? await repo.createHeat(raceId: race.id, name: "Heat 1") {
-                heatId = created.id
-            } else {
-                failed = true
-            }
-            isResolved = true
         }
     }
 }

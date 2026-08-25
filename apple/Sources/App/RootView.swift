@@ -143,19 +143,19 @@ private struct SidebarList: View {
 /// Schedule -> race -> heat navigation. Gated by `PADDLTIR_DEBUG_OPEN_FIRST_HEAT=1`.
 private struct DebugFirstHeatEditor: View {
     @Environment(AppModel.self) private var app
-    @State private var heatId: String?
+    @State private var race: Race?
 
     var body: some View {
         NavigationStack {
-            if let heatId {
-                LineupEditorView(heatId: heatId, raceName: "Lineup", db: app.environment.db)
+            if let race {
+                LineupEditorView(race: race, db: app.environment.db)
             } else {
                 ProgressView()
             }
         }
         .task {
-            let heat = (try? app.environment.db.read { try Heat.order(Column("sort_order")).fetchOne($0) }) ?? nil
-            heatId = heat?.id
+            let first = (try? app.environment.db.read { try Race.order(Column("sort_order")).fetchOne($0) }) ?? nil
+            race = first
         }
     }
 }
