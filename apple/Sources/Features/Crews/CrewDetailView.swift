@@ -55,9 +55,18 @@ struct CrewDetailView: View {
     @Environment(AppModel.self) private var app
     @State private var model: CrewDetailModel?
     @State private var addingMembers = false
+    @State private var didLoad = false
 
     var body: some View {
-        Group { if let model, model.crew != nil { content(model) } else { ProgressView() } }
+        Group {
+            if let model, model.crew != nil {
+                content(model)
+            } else if didLoad {
+                ScreenScaffold("Not found", note: "This record is no longer available.")
+            } else {
+                ProgressView()
+            }
+        }
             .navigationTitle(model?.crew?.name ?? "Crew")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -66,6 +75,7 @@ struct CrewDetailView: View {
             .task {
                 if model == nil { model = CrewDetailModel(crewId: crewId, db: app.environment.db) }
                 await model?.load()
+                didLoad = true
             }
             .sheet(isPresented: $addingMembers) { if let model { memberPicker(model) } }
     }

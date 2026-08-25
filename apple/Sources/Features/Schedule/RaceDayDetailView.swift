@@ -153,11 +153,14 @@ struct RaceHeatLoader: View {
     let race: Race
     @Environment(AppModel.self) private var app
     @State private var heatId: String?
+    @State private var didLoad = false
 
     var body: some View {
         Group {
             if let heatId {
                 LineupEditorView(heatId: heatId, raceName: race.name)
+            } else if didLoad {
+                ScreenScaffold("Lineup", note: "Couldn't open the lineup.")
             } else {
                 ProgressView()
             }
@@ -170,6 +173,7 @@ struct RaceHeatLoader: View {
             } else if let created = try? await repo.createHeat(raceId: race.id, name: "Heat 1") {
                 heatId = created.id
             }
+            didLoad = true
         }
     }
 }

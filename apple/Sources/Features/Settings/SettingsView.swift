@@ -23,7 +23,7 @@ struct SettingsView: View {
                         Text("Invite code").foregroundStyle(DS.ink2)
                         Spacer()
                         Text(code)
-                            .font(.system(.body, design: .monospaced))
+                            .font(.dsMono)
                             .foregroundStyle(DS.ink)
                         ShareLink(item: "Join our club on Paddltir with code \(code)") {
                             Image(systemName: "square.and.arrow.up")

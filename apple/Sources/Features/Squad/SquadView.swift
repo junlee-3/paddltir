@@ -24,15 +24,26 @@ struct SquadView: View {
                     // i.e. this is `String??`. `?? nil` flattens it to `String?`, then
                     // `?? ""` unwraps to a plain `String` for PaddlerFormView's `clubId`.
                     let clubId = ((try? app.environment.db.read { db in try Club.fetchOne(db)?.id }) ?? nil) ?? ""
-                    PaddlerFormView(clubId: clubId, existing: nil) { row in
-                        _ = try? await SquadRepository(db: app.environment.db).upsert(row)
-                        await model?.load()
+                    if !clubId.isEmpty {
+                        PaddlerFormView(clubId: clubId, existing: nil) { row in
+                            _ = try? await SquadRepository(db: app.environment.db).upsert(row)
+                            await model?.load()
+                        }
+                    } else {
+                        VStack(spacing: DS.Space.m) {
+                            Text("No club yet").font(.dsBody).foregroundStyle(DS.ink2)
+                            Button("Close") { adding = false }.keyboardShortcut(.cancelAction)
+                        }
+                        .padding(DS.Space.l)
                     }
                 }
         }
         .task {
             if model == nil { model = SquadViewModel(db: app.environment.db) }
             await model?.load()
+        }
+        .onChange(of: app.environment.syncGeneration) {
+            Task { await model?.load() }
         }
     }
 

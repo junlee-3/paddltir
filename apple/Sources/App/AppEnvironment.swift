@@ -32,6 +32,11 @@ final class AppEnvironment {
     /// on the next successful sync. Non-fatal; see file header.
     private(set) var lastSyncError: (any Error)?
 
+    /// Bumped after each successful sync so views that loaded from a
+    /// then-empty cache can reload once pulled data lands. (The feature
+    /// screens load once via `.task`; they observe this to refresh.)
+    private(set) var syncGeneration = 0
+
     init(client: SupabaseClient, db: AppDatabase) {
         self.client = client
         self.db = db
@@ -50,6 +55,7 @@ final class AppEnvironment {
         do {
             try await syncEngine.syncAll()
             lastSyncError = nil
+            syncGeneration += 1
         } catch {
             lastSyncError = error
         }

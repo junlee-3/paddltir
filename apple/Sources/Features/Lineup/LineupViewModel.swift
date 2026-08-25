@@ -58,7 +58,9 @@ final class LineupViewModel {
         case .reserve(let id):
             mutate { $0.place(id, at: seat) }; selection = nil
         case .seat(let s):
-            if s == seat { selection = nil } else { mutate { $0.swap(s, seat) }; selection = nil }
+            if s == seat { selection = nil }
+            else if lineup?.paddler(at: s) == nil && lineup?.paddler(at: seat) == nil { selection = nil }  // both empty → no-op
+            else { mutate { $0.swap(s, seat) }; selection = nil }
         case nil:
             selection = .seat(seat)   // pick a source (occupied or empty) to swap/fill
         }
