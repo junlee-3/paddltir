@@ -59,11 +59,17 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
       writes `heats` — needed by the 4f editor); a CrewDetailModel gender-rule-verdict unit test; guard SquadView's
       add-sheet on a non-empty clubId (currently falls back to ""); boat-size-specific gender check (4f); surface
       the side/gender/role squad filter chips (model already supports them).
-- [ ] **4f — Lineup editor (the hero)** `2026-08-25-plan-4f-editor.md`
-      Races/heats; the hull grid; seat **drag** (spring + haptic) and **tap-tap**; the **Balance HUD**
-      telemetry (emerald/red verdicts + balance beam) driven by `PaddltirCore` on every change; reserves
-      tray; **Suggest** & **Auto-fill** (PaddltirCore); **Optimise** (calls the solver, honest proven marks);
-      heat switcher; glass toolbar; undo/redo; locks. Mac: centred hull + right inspector. Verify: screenshots + interaction.
+- [x] **4f — Lineup editor, the hero (MERGED 3edcc81)** `2026-08-25-plan-4f-lineup-editor.md`
+      Hull grid (SeatTile rows, section labels), **tap-to-place/swap** + unseat + undo, live **Balance HUD**
+      (TelemetryGrid + BalanceBeam + gender, driven by PaddltirCore.Scoring on every change), reserves tray,
+      **Auto-fill** (Greedy) + **Suggest** (Suggestions.swaps, ranked sheet), glass heat-switcher + toolbar;
+      LineupRepository saveHeat/createHeat/heats (drummer/sweep persistence — the 4b/4d carry-forward, DONE);
+      wired from race day via RaceHeatLoader. 92 tests (engine fully TDD'd) + gated live e2e verified.
+      **DEFERRED to 4g/go-live:** seat **drag**+haptics+animations; **Optimise** (server MIP — solver deploys at
+      go-live/Plan 6); Share snapshot; multi-heat switcher nav (HeatSwitcher "+" inert for now — createHeat exists);
+      redo; long-press lock/drummer/sweep menu; section-band shading (label-only today); empty/error state when
+      placementRequest is nil (editor spins); GenderBadge reuse; two-empty-seat swap no-op guard; "unavailable
+      today" reserve dimming; heats(raceId:) test. Mac centred-hull + right-inspector layout also 4g.
 - [ ] **4g — Coach app integration & polish** end-to-end against merged backend, offline smoke,
       verification-before-completion, Mac layout pass, accessibility pass. (write after 4f)
 

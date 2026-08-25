@@ -4,7 +4,7 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule + Crews/Squad MERGED; next = Lineup editor (4f, the hero).**
+**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule + Crews/Squad + Lineup editor MERGED; next = coach-app integration & polish (4g).**
 
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
@@ -14,6 +14,23 @@ MERGED TO MAIN:
   type scale, primitives + domain components: SeatTile/TelemetryGrid/BalanceBeam/HeatSwitcher/AvailabilityRing),
   Design System gallery (screenshot verified vs concept), real Liquid Glass, LIGHT MODE ENFORCED. Builds
   iOS+macOS, reproducible from apple/project.yml. Final review clean.
+- **Plan 4f — Lineup editor, the hero (commit 3edcc81).** The lineup editor over PaddltirCore + GRDB.
+  ENGINE (fully TDD, 92 tests): LineupRepository saveHeat/createHeat/heats(raceId:) (drummer/sweep persistence,
+  the 4b/4d carry-forward); LineupViewModel (@MainActor) — loads a heat's PlacementRequest+Heat, holds a
+  PaddltirCore.Lineup + tap selection + undo stack; tap-to-place/swap, unseat, undo, reserves (erg-desc), save
+  (lineup→SeatRows via saveSeats + drummer/sweep via saveHeat); live metrics via Scoring.evaluate, beamImbalance,
+  Auto-fill via Greedy, Suggest via Suggestions.swaps — ALL seat/balance/placement logic delegates to PaddltirCore,
+  nothing reimplemented. UI: HullGrid (SeatTile rows, section labels, tap), LineupEditorView (glass HeatSwitcher +
+  hull + Balance HUD via GlassBar/TelemetryGrid/BalanceBeam + reserves chips + glass toolbar Suggest/Auto-fill/Undo),
+  wired from RaceDayDetailView via RaceHeatLoader (opens first heat or creates "Heat 1"). Gated live e2e verified.
+  DEBUG deep-link (PADDLTIR_DEBUG_OPEN_FIRST_HEAT/AUTOFILL) for screenshots. Final review clean (Ready to merge: Yes).
+  **NO editor screenshot** captured: the auto-capture reached the editor but the globally-first SEED heat has an
+  incomplete race→crew→members chain → placementRequest nil → editor spins (a seed-data gap + a real polish gap:
+  no empty/error state). Editor is otherwise proven by the 92-test engine + built on already-screenshotted 4a components.
+  **4g carry-forward (editor polish):** seat drag+haptics+animations; Optimise (server MIP, go-live/Plan 6); Share
+  snapshot; multi-heat switcher nav (HeatSwitcher "+" currently inert); redo; long-press lock/drummer/sweep menu;
+  section-band shading; empty/error state when placementRequest nil; GenderBadge reuse; two-empty-seat swap no-op
+  guard; "unavailable today" reserve dimming; heats(raceId:) test; Mac centred-hull + right-inspector layout.
 - **Plan 4e — Crews & Squad (commit 1d8dbca).** SQUAD: searchable/sortable/filterable roster (SquadView over
   SquadViewModel + pure SquadQuery/GenderTally); paddler detail (fields, erg-history sparkline via Swift Charts,
   invite/link status, archive) + create/edit form (SquadRepository.upsert); SquadRepository.ergHistory added.
@@ -79,16 +96,17 @@ BUILD MECHANICS (learned): XcodeGen (apple/project.yml → run `xcodegen generat
 UI verify = boot iPhone 17 Pro sim + `xcrun simctl io ... screenshot`. Real Liquid Glass API:
 `.glassEffect(.regular, in: .rect(cornerRadius:))` + `GlassEffectContainer(spacing:content:)` (iOS/macOS 26).
 
-REMAINING (in order): **Plan 4f** (Lineup editor — the hero) → 4g coach-app integration.
-CARRY-FORWARD into 4f: add heat drummer/sweep persistence (LineupRepository writes `seats` but nothing writes
-`heats`); boat-size-specific gender-rule check (per-heat, using the race's boat size); the hull grid + seat drag
-+ Balance HUD + Suggest/Auto-fill (PaddltirCore.Greedy) + Optimise (server MIP). Into 4g: sync-completion refresh
-for the feature screens (they load once via `.task` — the Squad list even needed a 2-launch screenshot);
-ScheduleViewModel.load() re-entrancy guard; availability note editing; erg recordedBy→current coach; a
-CrewDetailModel gender-rule unit test; guard SquadView add-sheet on non-empty clubId; surface side/gender/role
-squad filter chips; the 4c deferred-polish (.dsMono token, teal placeholder). Feature-view detail screens (paddler/
-crew/training/race) each own their NavigationStack, so the child-`.navigationTitle` issue is now only the bare
-Schedule/Crews/Squad placeholders' successors — all replaced except none remain.
+REMAINING (in order): **Plan 4g** (coach-app integration & polish) — THEN Plan 5 (paddler PWA), GO-LIVE (hosted
+Supabase ap-southeast-2 + Vercel deploy incl. the Python solver — which unblocks Optimise), Plan 6 end-to-end.
+4g SCOPE (the accumulated polish + integration): (editor) seat drag+haptics+animations, Optimise UI wired to the
+deployed solver, Share snapshot, multi-heat switcher nav (HeatSwitcher "+" inert now), redo, long-press
+lock/drummer/sweep menu, section-band shading, empty/error state when placementRequest nil, GenderBadge reuse,
+two-empty-seat swap no-op guard, Mac centred-hull+inspector; (cross-cutting) sync-completion refresh for feature
+screens (they load once via `.task`), VM load() re-entrancy guards, availability note editing, erg recordedBy→
+current coach, CrewDetailModel gender-rule test + heats(raceId:) test, guard SquadView add-sheet clubId, surface
+side/gender/role squad filter chips, .dsMono token + teal-placeholder fix, boat-size-specific per-heat gender check,
+accessibility pass (empty-seat labels), offline smoke, verification-before-completion. Full-run reproducibility:
+each plan built via subagent-driven-development on `.worktrees/plan-4X`, merged after final review.
 Deferred to Plan 6: ISO8601 ms-truncation causes newest row to re-pull each sync (idempotent); splitRows
 returns [] on non-array response; live PUSH never exercised (live PULL + onboarding RPCs now are).
 Then Plan 5 (paddler PWA), GO-LIVE (hosted Supabase project ap-southeast-2 + Vercel deploy), Plan 6
