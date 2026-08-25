@@ -58,6 +58,16 @@ struct HullGrid: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel(for: seat))
+        .accessibilityHint("Double-tap to select")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func accessibilityLabel(for seat: Seat) -> String {
+        let side = seat.side == .left ? "left" : "right"
+        let who = lineup.paddler(at: seat).flatMap { roster.byID[$0]?.name } ?? (lineup.paddler(at: seat) == nil ? "empty" : "occupied")
+        return "Bench \(seat.bench) \(side), \(who)"
     }
 
     private func capRow(_ label: String, id: PaddlerID?) -> some View {
