@@ -37,6 +37,9 @@ final class LineupViewModel {
         lineup = req.current ?? Lineup(boat: req.boat, drummerId: req.drummerId, sweepId: req.sweepId)
         original = lineup
         undoStack = []; canUndo = false; selection = nil
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_AUTOFILL"] == "1" { autoFill() }
+        #endif
     }
 
     /// Candidates not seated / drummer / sweep, strongest erg first.

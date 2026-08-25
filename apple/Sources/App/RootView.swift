@@ -1,4 +1,7 @@
 import SwiftUI
+#if DEBUG
+import GRDB
+#endif
 
 /// Top-level gate: switches on `SessionController.state` to show the
 /// signed-out auth flow, the no-club onboarding flow, or the main app
@@ -37,6 +40,10 @@ private struct MainShell: View {
     }()
     #endif
 
+    #if DEBUG
+    @State private var debugOpenHeat = ProcessInfo.processInfo.environment["PADDLTIR_DEBUG_OPEN_FIRST_HEAT"] == "1"
+    #endif
+
     var body: some View {
         #if os(macOS)
         NavigationSplitView {
@@ -66,6 +73,9 @@ private struct MainShell: View {
             #endif
         }
         .tint(DS.accent)
+        #if DEBUG && os(iOS)
+        .fullScreenCover(isPresented: $debugOpenHeat) { DebugFirstHeatEditor() }
+        #endif
         #endif
     }
 
@@ -105,6 +115,30 @@ private struct SidebarList: View {
             Label(section.rawValue, systemImage: section.systemImage).tag(section)
         }
         .navigationTitle("Paddltir")
+    }
+}
+#endif
+
+#if DEBUG
+/// Screenshot-only deep link: resolves the first heat (by `sort_order`) and
+/// opens the lineup editor directly on it, bypassing the normal
+/// Schedule -> race -> heat navigation. Gated by `PADDLTIR_DEBUG_OPEN_FIRST_HEAT=1`.
+private struct DebugFirstHeatEditor: View {
+    @Environment(AppModel.self) private var app
+    @State private var heatId: String?
+
+    var body: some View {
+        NavigationStack {
+            if let heatId {
+                LineupEditorView(heatId: heatId, raceName: "Lineup")
+            } else {
+                ProgressView()
+            }
+        }
+        .task {
+            let heat = (try? app.environment.db.read { try Heat.order(Column("sort_order")).fetchOne($0) }) ?? nil
+            heatId = heat?.id
+        }
     }
 }
 #endif
