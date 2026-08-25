@@ -39,12 +39,16 @@ hairline borders, green=Male/amber=Female tiles + emerald/red verdicts kept; tea
       rules, sign out). 66 tests + gated live onboarding e2e (verified PASS vs local stack). **SIWA + magic-link
       functional verification DEFERRED to a signed go-live build** (entitlements need signing; magic link needs
       SMTP/deep-links) — built & rendered, not runnable unsigned. Residual polish → 4d/4e (see PROGRESS).
-- [ ] **4d — Schedule & availability** `2026-08-25-plan-4d-schedule.md`
-      Schedule tab, Up-next hero, session detail (training + race day), availability list + coach override,
-      record-erg quick action. Verify: screenshots against the demo data.
-      **Carry-forward from 4b review:** (a) annotate `AppEnvironment` `@MainActor` and wire its `sync()`
-      into `RootView.task` (the clubID cache-on-success fix already unblocks pre-sign-in syncs);
-      (b) rename `ScheduleRepository.upcomingSessions()` → `sessions()` (it sorts, doesn't future-filter).
+- [x] **4d — Schedule & availability (MERGED 3b13bf6)** `2026-08-25-plan-4d-schedule.md`
+      Schedule tab (up-next glass hero with headcount, day-grouped timeline, past collapsed, create menu),
+      SessionFormView (create training/race-day), TrainingDetailView (availability list + coach override +
+      record-erg), RaceDayDetailView (races + day headcount + add-race + lineup nav stub). Repo writes
+      (createSession/setAvailability/createRace/recordErg, each atomic mutation+outbox) + `sessions()` rename.
+      Pure Headcount/ScheduleGrouping. 76 tests + gated live e2e verified vs local stack; screenshot surfaced.
+      Carry-forwards from 4b DONE (@MainActor AppEnvironment + sync() wired in 4c; upcomingSessions→sessions()).
+      **Deferred to 4g:** screens don't reload when background sync completes (load once via `.task`) — add a
+      sync-completion refresh; ScheduleViewModel.load() re-entrancy guard. DEBUG-only auto-sign-in + in-memory
+      auth storage added (gated on PADDLTIR_DEBUG_AUTOSIGNIN) for signed-in screenshots.
 - [ ] **4e — Crews & Squad** `2026-08-25-plan-4e-crews-squad.md`
       Crews tab + crew detail (members, gender-rule check, races history); Squad roster table (sort/filter),
       paddler detail (edit, erg history sparkline, availability, invite/link). Verify: screenshots.

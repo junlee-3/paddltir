@@ -4,7 +4,7 @@
 > implementation plan (docs/superpowers/plans/) BEFORE anything else.
 
 ## Current phase
-**Building the SwiftUI coach app (Plan 4). Foundation + data + auth MERGED; next = Schedule & availability (4d).**
+**Building the SwiftUI coach app (Plan 4). Foundation + data + auth + Schedule MERGED; next = Crews & Squad (4e).**
 
 MERGED TO MAIN:
 - Phase 1 (backend/algorithms): PaddltirCore (Swift, 56 tests) · solver (Python HiGHS MIP, 25 tests) ·
@@ -14,6 +14,21 @@ MERGED TO MAIN:
   type scale, primitives + domain components: SeatTile/TelemetryGrid/BalanceBeam/HeatSwitcher/AvailabilityRing),
   Design System gallery (screenshot verified vs concept), real Liquid Glass, LIGHT MODE ENFORCED. Builds
   iOS+macOS, reproducible from apple/project.yml. Final review clean.
+- **Plan 4d — Schedule & availability (commit 3b13bf6).** Schedule tab: up-next glass hero (with headcount),
+  day-grouped timeline, past collapsed, `+` create menu → SessionFormView (training/race-day); TrainingDetailView
+  (availability list + coach override write + record-erg quick action); RaceDayDetailView (races list + day
+  headcount + add-race; race → LineupEditorPlaceholder nav stub for 4f). Data: ScheduleRepository writes
+  (createSession/setAvailability[upsert]/createRace) + SquadRepository.recordErg, each atomic mutation+Outbox in
+  one db.write; `upcomingSessions()`→`sessions()`. Pure Headcount + ScheduleGrouping (day-bucket, up-next,
+  upcoming/past; now-injected, unit-tested). ScheduleViewModel composes it. 76 tests; gated live onboarding+sync
+  e2e VERIFIED vs local stack. Screenshot surfaced (real seed data). Final review caught + fixed an up-next
+  duplication bug (hero + list). DEBUG auto-sign-in launch hook + DEBUG in-memory AuthLocalStorage (gated on
+  PADDLTIR_DEBUG_AUTOSIGNIN) enable signed-in screenshots in the unsigned sim.
+  **4g DEFERRALS:** screens load once via `.task` and do NOT reload when background AppEnvironment.sync() finishes
+  (add a sync-completion refresh / GRDB observation); ScheduleViewModel.load() lacks a re-entrancy guard; per-paddler
+  availability NOTE editing is read-through only; erg `recordedBy` passed nil (wire to current coach). Also still
+  open: MainShell tabs not wrapped in NavigationStack (so child `.navigationTitle` no-ops); heat drummer/sweep
+  persistence (4e — no repo writes `heats`). Plus the 4c deferred-polish list (.dsMono token, teal placeholder, etc).
 - **Plan 4c — Auth & onboarding (commit cd2579b).** 3-state AuthState gate over RootView driven by
   SessionController (subscribes to supabase-swift authStateChanges, resolves club via ClubService);
   AppModel composition root shares ONE SupabaseClient between sync (AppEnvironment, now @MainActor) and auth.
@@ -54,11 +69,11 @@ BUILD MECHANICS (learned): XcodeGen (apple/project.yml → run `xcodegen generat
 UI verify = boot iPhone 17 Pro sim + `xcrun simctl io ... screenshot`. Real Liquid Glass API:
 `.glassEffect(.regular, in: .rect(cornerRadius:))` + `GlassEffectContainer(spacing:content:)` (iOS/macOS 26).
 
-REMAINING (in order): **Plan 4d** (Schedule/availability) → 4e Crews/Squad → 4f Lineup editor (the hero) →
-4g coach-app integration.
-CARRY-FORWARD: 4d — rename ScheduleRepository.upcomingSessions()→sessions() (4b review); wrap MainShell tabs
-in NavigationStack (4c); [DONE in 4c: @MainActor AppEnvironment + sync() wired into RootView]. 4e — add heat
-drummer/sweep persistence (no repo writes `heats` yet). Plus the 4c deferred-polish list above.
+REMAINING (in order): **Plan 4e** (Crews/Squad) → 4f Lineup editor (the hero) → 4g coach-app integration.
+CARRY-FORWARD into 4e: add heat drummer/sweep persistence (no repo writes `heats` yet); wrap MainShell tabs in
+NavigationStack (child `.navigationTitle`s no-op until then). Into 4g: sync-completion refresh for the feature
+screens (they load once via `.task`); ScheduleViewModel.load() re-entrancy guard; availability note editing;
+erg recordedBy→current coach. Plus the 4c deferred-polish (.dsMono token, teal placeholder, etc.).
 Deferred to Plan 6: ISO8601 ms-truncation causes newest row to re-pull each sync (idempotent); splitRows
 returns [] on non-array response; live PUSH never exercised (live PULL + onboarding RPCs now are).
 Then Plan 5 (paddler PWA), GO-LIVE (hosted Supabase project ap-southeast-2 + Vercel deploy), Plan 6
